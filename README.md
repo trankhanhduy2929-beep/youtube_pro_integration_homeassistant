@@ -1,64 +1,76 @@
-# YouTube Pro 4.1.0
+# YouTube Pro Home Assistant Integration
 
-Add-on YouTube Pro cho Home Assistant, được tách riêng hoàn toàn khỏi YouTube Music Lite để có thể cài song song.
+Custom integration **YouTube Pro 4.0.0** cho Home Assistant. Integration này
+kết nối tới add-on YouTube Pro đang chạy trên cổng `2032` và không dùng chung
+config entry, token hoặc dữ liệu với bản YouTube Music Lite.
 
-## Định danh riêng
+## Cài bằng HACS
 
-- Add-on slug: `youtube_pro_addon`
-- Cổng relay và Integration API: `2032/tcp`
-- Custom integration: `youtube_pro`
-- License Key: `YTP-XXXXX-XXXXX-XXXXX-XXXXX`
-- Dữ liệu add-on, integration token, license installation và localStorage không dùng chung với bản Lite.
+1. Mở **HACS → Integrations**.
+2. Chọn menu ba chấm → **Custom repositories**.
+3. Nhập URL repository GitHub này và chọn loại **Integration**.
+4. Cài **YouTube Pro** rồi khởi động lại Home Assistant.
+5. Vào **Settings → Devices & services → Add integration → YouTube Pro**.
 
-## Tính năng giữ nguyên
+## Cài thủ công
 
-- Giao diện Ingress phong cách YouTube Music, tối ưu desktop và mobile.
-- Tìm kiếm, playlist, hàng chờ, lịch sử, yêu thích, hẹn giờ và phát trên điện thoại.
-- Phát tới `media_player` Home Assistant qua audio relay có Range support.
-- Media Browser 3.2 native, tìm kiếm và điều khiển next/previous/repeat/shuffle.
-- Integration API dùng Bearer token riêng; API quản trị vẫn chỉ mở qua Home Assistant Ingress.
-- License tự động có activation token, kiểm tra định kỳ và offline grace; add-on khóa bắt buộc khi chưa có key hợp lệ.
+Giải nén file `youtube_pro_manual.zip` từ GitHub Release vào thư mục cấu hình
+Home Assistant. Kết quả phải là:
 
-## Cài add-on
-
-1. Chép thư mục `youtube_pro_addon` vào repository add-on local.
-2. Reload add-on store rồi cài **YouTube Pro 4.1.0**.
-3. Giữ port host `2032` nếu không có dịch vụ khác sử dụng cổng này.
-4. Khởi động add-on và mở Web UI.
-
-Nếu loa cần URL LAN cố định, cấu hình:
-
-```yaml
-media_base_url: "http://192.168.1.20:2032"
+```text
+/config/custom_components/youtube_pro/manifest.json
 ```
 
-## Cài custom integration
+Sau đó khởi động lại Home Assistant.
 
-1. Chép `projects/youtube_pro/custom_components/youtube_pro` vào `/config/custom_components/youtube_pro`.
-2. Khởi động lại Home Assistant.
-3. Trong add-on, mở **Hẹn giờ → Home Assistant integration** và sao chép token.
-4. Thêm integration **YouTube Pro** với URL `http://homeassistant.local:2032` hoặc IP Home Assistant cùng cổng `2032`.
+## Cấu hình
 
-Các service:
+1. Khởi động add-on **YouTube Pro 4.0.0** trên cổng `2032`.
+2. Mở add-on → **Hẹn giờ → Home Assistant integration**.
+3. Sao chép token Integration.
+4. Trong config flow, nhập URL:
 
-- `youtube_pro.play`
-- `youtube_pro.play_playlist`
-- `youtube_pro.enqueue`
-- `youtube_pro.set_timer`
-
-## License
-
-Portal production đã được cấu hình mặc định:
-
-```yaml
-license_server_url: "https://youtube-pro-license-portal.vercel.app"
-license_enforcement: true
+```text
+http://homeassistant.local:2032
 ```
 
-`license_enforcement` được giữ lại để tương thích cấu hình cũ nhưng không còn tắt được enforcement. Add-on không chứa PayOS secret, database secret, service token hoặc admin secret.
+Nếu DNS `.local` không hoạt động, dùng IP LAN của Home Assistant, ví dụ:
 
-## Lưu ý
+```text
+http://192.168.1.20:2032
+```
 
-- Bản Lite tại `ket_qua/youtube_cast_addon` không bị sửa.
-- Bản Pro và Lite có thể chạy đồng thời trên `2032` và `2232`.
-- Chưa tuyên bố kiểm thử loa thật cho bản Pro cho tới khi cài trên thiết bị Home Assistant thực tế.
+5. Dán token và chọn loa mặc định cho Media Browser.
+
+## Tính năng
+
+- Media Browser native: khám phá, playlist, queue, history và tìm kiếm gần đây.
+- Tìm kiếm YouTube native trên entity Media Browser.
+- Phát track hoặc playlist tới bất kỳ `media_player` nào.
+- Next, previous, repeat, shuffle và resolve relay an toàn.
+- Sensor: health, extractor, resolve time, active sessions và transport.
+- Service: `youtube_pro.play`, `youtube_pro.play_playlist`,
+  `youtube_pro.enqueue`, `youtube_pro.set_timer`.
+
+## Cập nhật token
+
+Nếu tạo token mới trong add-on, mở **Configure** trên integration để nhập lại
+token. Token cũ sẽ không được dùng tiếp.
+
+## Bản Lite
+
+YouTube Pro dùng integration domain `youtube_pro` và cổng `2032`. Bản Lite giữ
+domain riêng và cổng `2232`, có thể chạy song song.
+
+## Phát hành
+
+Repository này có workflow kiểm tra tự động. Khi tạo tag dạng `v4.0.0`, GitHub
+Actions sẽ tạo các asset:
+
+- `youtube_pro.zip`: asset HACS.
+- `youtube_pro_manual.zip`: gói cài thủ công.
+- `youtube_pro_homeassistant_v4.0.0_source.zip`: source repository.
+- `SHA256SUMS.txt`: checksum.
+
+Integration không chứa PayOS secret, database secret, Worker service token hoặc
+mật khẩu Admin.

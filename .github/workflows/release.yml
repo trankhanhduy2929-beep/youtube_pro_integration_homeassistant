@@ -1,0 +1,48 @@
+name: Release YouTube Pro Integration
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build and publish release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.13"
+
+      - name: Validate tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python scripts/validate_repository.py
+          VERSION="$(python -c 'import json; print(json.load(open("custom_components/youtube_pro/manifest.json"))["version"])')"
+          test "$RELEASE_TAG" = "v$VERSION"
+
+      - name: Build release archives
+        run: python scripts/package_release.py
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@fe965f7af51af5f2602596916f38a38df2e33de0 # v3.0.2
+        with:
+          name: YouTube Pro Integration ${{ github.ref_name }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            dist/youtube_pro.zip
+            dist/youtube_pro_manual.zip
+            dist/youtube_pro_v*_hacs.zip
+            dist/youtube_pro_v*_manual.zip
+            dist/youtube_pro_homeassistant_v*_source.zip
+            dist/SHA256SUMS.txt

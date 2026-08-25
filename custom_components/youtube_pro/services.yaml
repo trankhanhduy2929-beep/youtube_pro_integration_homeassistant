@@ -1,0 +1,183 @@
+play:
+  name: Phát URL YouTube
+  description: Resolve và phát một URL YouTube trên media_player qua playback engine của add-on.
+  fields:
+    config_entry_id:
+      name: Config entry
+      description: Chỉ cần khi có nhiều instance; để trống sẽ dùng instance đang tải đầu tiên.
+      selector:
+        config_entry:
+          integration: youtube_pro
+    entity_id:
+      name: Thiết bị phát
+      required: true
+      selector:
+        entity:
+          domain: media_player
+    url:
+      name: URL YouTube
+      required: true
+      selector:
+        text:
+          type: url
+    title:
+      name: Tiêu đề
+      selector:
+        text:
+    repeat:
+      name: Chế độ lặp
+      default: "off"
+      selector:
+        select:
+          options:
+            - "off"
+            - all
+            - one
+    shuffle:
+      name: Phát ngẫu nhiên
+      default: false
+      selector:
+        boolean:
+
+play_playlist:
+  name: Phát playlist add-on
+  description: Phát playlist đã lưu trong YouTube Pro trên media_player.
+  fields:
+    config_entry_id:
+      name: Config entry
+      selector:
+        config_entry:
+          integration: youtube_pro
+    entity_id:
+      name: Thiết bị phát
+      required: true
+      selector:
+        entity:
+          domain: media_player
+    playlist_name:
+      name: Tên playlist
+      required: true
+      selector:
+        text:
+    index:
+      name: Vị trí bắt đầu
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 999
+          mode: box
+    repeat:
+      name: Chế độ lặp
+      default: all
+      selector:
+        select:
+          options:
+            - "off"
+            - all
+            - one
+    shuffle:
+      name: Phát ngẫu nhiên
+      default: false
+      selector:
+        boolean:
+
+enqueue:
+  name: Thêm vào hàng chờ
+  description: Thêm URL YouTube vào hàng chờ chung của add-on.
+  fields:
+    config_entry_id:
+      name: Config entry
+      selector:
+        config_entry:
+          integration: youtube_pro
+    url:
+      name: URL YouTube
+      required: true
+      selector:
+        text:
+          type: url
+    title:
+      name: Tiêu đề
+      selector:
+        text:
+
+set_timer:
+  name: Đặt lịch phát
+  description: Tạo hoặc cập nhật lịch phát/dừng trong add-on.
+  fields:
+    config_entry_id:
+      name: Config entry
+      selector:
+        config_entry:
+          integration: youtube_pro
+    id:
+      name: ID lịch
+      description: Để trống để tạo lịch mới; dùng lại ID để cập nhật lịch hiện có.
+      selector:
+        text:
+    entity_id:
+      name: Thiết bị phát
+      required: true
+      selector:
+        entity:
+          domain: media_player
+    time:
+      name: Thời gian
+      required: true
+      selector:
+        time:
+    action:
+      name: Hành động
+      default: play
+      selector:
+        select:
+          options:
+            - play
+            - stop
+    playlist_name:
+      name: Tên playlist
+      description: Bắt buộc khi hành động là play.
+      selector:
+        text:
+    days:
+      name: Ngày chạy
+      description: Bỏ trống để chạy mỗi ngày; 0 là thứ Hai và 6 là Chủ nhật.
+      selector:
+        select:
+          multiple: true
+          options:
+            - label: Thứ Hai
+              value: "0"
+            - label: Thứ Ba
+              value: "1"
+            - label: Thứ Tư
+              value: "2"
+            - label: Thứ Năm
+              value: "3"
+            - label: Thứ Sáu
+              value: "4"
+            - label: Thứ Bảy
+              value: "5"
+            - label: Chủ nhật
+              value: "6"
+    shuffle:
+      name: Phát ngẫu nhiên
+      default: true
+      selector:
+        boolean:
+    enabled:
+      name: Kích hoạt
+      default: true
+      selector:
+        boolean:
+    duration:
+      name: Tự dừng sau
+      description: Số phút, đặt 0 để không tự dừng.
+      default: 0
+      selector:
+        number:
+          min: 0
+          max: 720
+          unit_of_measurement: phút
+          mode: box

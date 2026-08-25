@@ -1,0 +1,73 @@
+{
+  "title": "YouTube Pro",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Kết nối YouTube Pro",
+        "description": "Mở add-on → Hẹn giờ → Home Assistant integration để sao chép token. URL thường là http://homeassistant.local:2032 hoặc IP Home Assistant cùng cổng 2032.",
+        "data": {
+          "url": "URL add-on",
+          "token": "Integration token",
+          "default_entity_id": "Loa mặc định cho Media Browser"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Cập nhật integration token",
+        "description": "Token cũ đã bị từ chối. Sao chép token hiện tại từ giao diện Ingress của add-on.",
+        "data": {
+          "token": "Integration token mới"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Không thể kết nối add-on",
+      "invalid_auth": "Integration token không hợp lệ",
+      "invalid_url": "URL add-on không hợp lệ",
+      "unknown": "Lỗi không xác định"
+    },
+    "abort": {
+      "already_configured": "Add-on này đã được cấu hình",
+      "reauth_successful": "Đã cập nhật token"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Phát từ Media Browser",
+        "description": "Chọn media_player vật lý sẽ nhận nhạc khi bạn phát hoặc tìm kiếm từ entity YouTube Pro Media Browser.",
+        "data": {
+          "default_entity_id": "Loa mặc định"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "health": {
+        "name": "Sức khỏe",
+        "state": {
+          "ok": "Tốt",
+          "degraded": "Suy giảm"
+        }
+      },
+      "extractor": {
+        "name": "Extractor"
+      },
+      "resolve_time": {
+        "name": "Thời gian resolve"
+      },
+      "active_sessions": {
+        "name": "Phiên đang hoạt động"
+      },
+      "transport": {
+        "name": "Đường truyền",
+        "state": {
+          "idle": "Rảnh",
+          "direct": "Trực tiếp",
+          "relay": "Relay",
+          "mixed": "Hỗn hợp"
+        }
+      }
+    }
+  }
+}
