@@ -1,0 +1,73 @@
+{
+  "title": "YouTube Pro",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect YouTube Pro",
+        "description": "Open the add-on → Timers → Home Assistant integration to copy the token. The URL is usually http://homeassistant.local:2032 or the Home Assistant IP on port 2032.",
+        "data": {
+          "url": "Add-on URL",
+          "token": "Integration token",
+          "default_entity_id": "Default Media Browser speaker"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Update integration token",
+        "description": "The previous token was rejected. Copy the current token from the add-on Ingress UI.",
+        "data": {
+          "token": "New integration token"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to connect to the add-on",
+      "invalid_auth": "Invalid integration token",
+      "invalid_url": "Invalid add-on URL",
+      "unknown": "Unexpected error"
+    },
+    "abort": {
+      "already_configured": "This add-on is already configured",
+      "reauth_successful": "Token updated"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Media Browser playback",
+        "description": "Choose the physical media_player used when you play or search from the YouTube Pro Media Browser entity.",
+        "data": {
+          "default_entity_id": "Default speaker"
+        }
+      }
+    }
+  },
+  "entity": {
+    "sensor": {
+      "health": {
+        "name": "Health",
+        "state": {
+          "ok": "OK",
+          "degraded": "Degraded"
+        }
+      },
+      "extractor": {
+        "name": "Extractor"
+      },
+      "resolve_time": {
+        "name": "Resolve time"
+      },
+      "active_sessions": {
+        "name": "Active sessions"
+      },
+      "transport": {
+        "name": "Transport",
+        "state": {
+          "idle": "Idle",
+          "direct": "Direct",
+          "relay": "Relay",
+          "mixed": "Mixed"
+        }
+      }
+    }
+  }
+}

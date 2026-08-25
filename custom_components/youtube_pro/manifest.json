@@ -1,0 +1,12 @@
+{
+  "domain": "youtube_pro",
+  "name": "YouTube Pro",
+  "codeowners": ["@trankhanhduy2912"],
+  "config_flow": true,
+  "documentation": "https://github.com/trankhanhduy2912",
+  "dependencies": ["media_source"],
+  "integration_type": "service",
+  "iot_class": "local_polling",
+  "single_config_entry": true,
+  "version": "4.0.0"
+}
