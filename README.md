@@ -8,7 +8,7 @@ config entry, token hoặc dữ liệu với bản YouTube Music Lite.
 
 1. Mở **HACS → Integrations**.
 2. Chọn menu ba chấm → **Custom repositories**.
-3. Nhập URL repository GitHub này và chọn loại **Integration**.
+3. Nhập URL repository GitHub này `https://github.com/trankhanhduy2929-beep/youtube_pro_integration_homeassistant` và chọn loại **Integration**.
 4. Cài **YouTube Pro** rồi khởi động lại Home Assistant.
 5. Vào **Settings → Devices & services → Add integration → YouTube Pro**.
 
@@ -50,20 +50,3 @@ Nếu cần URL thủ công, dùng `http://homeassistant.local:2032` hoặc IP L
 Nếu tạo token mới trong add-on, mở **Configure** trên integration để nhập lại
 token. Token cũ sẽ không được dùng tiếp.
 
-## Bản Lite
-
-YouTube Pro dùng integration domain `youtube_pro` và cổng `2032`. Bản Lite giữ
-domain riêng và cổng `2232`, có thể chạy song song.
-
-## Phát hành
-
-Repository này có workflow kiểm tra tự động. Khi tạo tag dạng `v5.0.1`, GitHub
-Actions sẽ tạo các asset:
-
-- `youtube_pro.zip`: asset HACS.
-- `youtube_pro_manual.zip`: gói cài thủ công.
-- `youtube_pro_homeassistant_v5.0.1_source.zip`: source repository.
-- `SHA256SUMS.txt`: checksum.
-
-Integration không chứa PayOS secret, database secret, Worker service token hoặc
-mật khẩu Admin.
