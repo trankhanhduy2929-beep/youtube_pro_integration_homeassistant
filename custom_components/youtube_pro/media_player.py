@@ -6,6 +6,7 @@ from typing import Any
 
 from homeassistant.components.media_player import (
     BrowseMedia,
+    MediaClass,
     MediaPlayerEntity,
     SearchMedia,
     SearchMediaQuery,
@@ -27,6 +28,8 @@ from .api import YouTubeProApiError
 from .const import CONF_DEFAULT_ENTITY_ID, DOMAIN
 from .coordinator import YouTubeProConfigEntry, YouTubeProCoordinator
 from .media_source import (
+    MEDIA_KIND_AUDIO,
+    MEDIA_KIND_VIDEO,
     YouTubeProMediaSource,
     _decode_identifier,
     _track_item,
@@ -169,7 +172,11 @@ class YouTubeProPlayer(
     @property
     def media_content_type(self) -> MediaType:
         """Return current media type."""
-        return MediaType.MUSIC
+        return (
+            MediaType.VIDEO
+            if self.current_track.get("media_kind") == MEDIA_KIND_VIDEO
+            else MediaType.MUSIC
+        )
 
     @property
     def shuffle(self) -> bool:
@@ -236,17 +243,37 @@ class YouTubeProPlayer(
         search_query = query.search_query.strip()
         if not search_query:
             return SearchMedia(result=[])
+        media_kind = self._search_media_kind(query)
         try:
-            payload = await self.coordinator.api.async_search(search_query, limit=20)
+            if media_kind == MEDIA_KIND_VIDEO:
+                payload = await self.coordinator.api.async_search(
+                    search_query, limit=20, media_kind=media_kind
+                )
+            else:
+                payload = await self.coordinator.api.async_search(
+                    search_query, limit=20
+                )
         except YouTubeProApiError as error:
             raise HomeAssistantError(str(error)) from error
         return SearchMedia(
             result=[
                 item
                 for track in payload.get("results") or []
-                if (item := _track_item(track)) is not None
+                if (item := _track_item(track, media_kind=media_kind)) is not None
             ]
         )
+
+    def _search_media_kind(self, query: SearchMediaQuery) -> str:
+        """Infer whether native Media Browser search targets audio or video."""
+        media_type = str(query.media_content_type or "").casefold()
+        if media_type in {MediaType.VIDEO.value, MediaType.MOVIE.value}:
+            return MEDIA_KIND_VIDEO
+        if query.media_filter_classes and MediaClass.VIDEO in query.media_filter_classes:
+            return MEDIA_KIND_VIDEO
+        identifier = self._media_identifier(query.media_content_id or "")
+        if identifier == "videos" or identifier.startswith("video-"):
+            return MEDIA_KIND_VIDEO
+        return MEDIA_KIND_AUDIO
 
     def _media_source_item(self, identifier: str):
         from homeassistant.components.media_source import MediaSourceItem
@@ -266,7 +293,7 @@ class YouTubeProPlayer(
         identifier = self._media_identifier(str(media_id))
         kind, separator, encoded = identifier.partition("/")
 
-        if kind == "playlist-track" and separator:
+        if kind in {"playlist-track", "video-playlist-track"} and separator:
             encoded_name, index_separator, raw_index = encoded.partition("/")
             if not index_separator:
                 raise HomeAssistantError("Playlist identifier không hợp lệ")
@@ -295,7 +322,35 @@ class YouTubeProPlayer(
             )
             return
 
-        if identifier.startswith(("https://youtube.com/", "https://www.youtube.com/", "https://youtu.be/", "https://music.youtube.com/")):
+        if kind == "video-track" and separator:
+            url = _decode_identifier(encoded)
+            await self._async_api_operation(
+                self.coordinator.api.async_play(
+                    target,
+                    url,
+                    "YouTube Video",
+                    self.repeat.value,
+                    self.shuffle,
+                    media_kind=MEDIA_KIND_VIDEO,
+                    track={"url": url, "title": "YouTube Video"},
+                )
+            )
+            return
+
+        if identifier.startswith(
+            (
+                "https://youtube.com/",
+                "https://www.youtube.com/",
+                "https://youtu.be/",
+                "https://music.youtube.com/",
+            )
+        ):
+            media_kind = (
+                MEDIA_KIND_VIDEO
+                if str(media_type).casefold()
+                in {MediaType.VIDEO.value, MediaType.MOVIE.value}
+                else MEDIA_KIND_AUDIO
+            )
             await self._async_api_operation(
                 self.coordinator.api.async_play(
                     target,
@@ -303,6 +358,7 @@ class YouTubeProPlayer(
                     "YouTube Music",
                     self.repeat.value,
                     self.shuffle,
+                    media_kind=media_kind,
                 )
             )
             return

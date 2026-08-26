@@ -9,7 +9,10 @@ LOGGER = logging.getLogger(__package__)
 CONF_TOKEN = "token"
 CONF_CONFIG_ENTRY_ID = "config_entry_id"
 CONF_DEFAULT_ENTITY_ID = "default_entity_id"
-DEFAULT_URL = "http://homeassistant.local:2032"
+ADDON_PORT = 2032
+ADDON_SLUG = "youtube_pro_addon"
+AUTO_URL = "auto"
+DEFAULT_URL = AUTO_URL
 DEFAULT_UPDATE_INTERVAL = timedelta(seconds=15)
 
 SERVICE_PLAY = "play"

@@ -9,13 +9,13 @@ youtube-pro-home-assistant
 ## Cách 1: Upload bằng giao diện GitHub
 
 1. Tạo repository mới `youtube-pro-home-assistant`.
-2. Giải nén gói `youtube_pro_custom_component_github_v4.0.0.zip`.
+2. Giải nén gói source `youtube_pro_homeassistant_v5.0.1_source.zip` hoặc thư mục repository hiện tại.
 3. Mở thư mục `youtube-pro-home-assistant` vừa giải nén.
 4. Upload **toàn bộ nội dung bên trong**, bao gồm thư mục ẩn `.github`.
 5. Commit vào nhánh `main`.
 6. Kiểm tra tab **Actions**; workflow `Validate YouTube Pro Integration` phải xanh.
 
-Để tạo Release tự động bằng giao diện GitHub, tạo tag/release `v4.0.0`. Nếu
+Để tạo Release tự động bằng giao diện GitHub, tạo tag/release `v5.0.1`. Nếu
 GitHub không chạy workflow khi tạo release trực tiếp, dùng cách dòng lệnh bên
 dưới để push tag.
 
@@ -24,12 +24,12 @@ dưới để push tag.
 ```bash
 git init
 git add .
-git commit -m "Release YouTube Pro integration 4.0.0"
+git commit -m "Release YouTube Pro integration 5.0.1"
 git branch -M main
 git remote add origin https://github.com/trankhanhduy2929-beep/youtube-pro-home-assistant.git
 git push -u origin main
-git tag v4.0.0
-git push origin v4.0.0
+git tag v5.0.1
+git push origin v5.0.1
 ```
 
 Sau khi tag được push, workflow Release tạo các asset `youtube_pro.zip`,

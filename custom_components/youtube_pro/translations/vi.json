@@ -4,9 +4,9 @@
     "step": {
       "user": {
         "title": "Kết nối YouTube Pro",
-        "description": "Mở add-on → Hẹn giờ → Home Assistant integration để sao chép token. URL thường là http://homeassistant.local:2032 hoặc IP Home Assistant cùng cổng 2032.",
+        "description": "Mở add-on → Hẹn giờ → Home Assistant integration để sao chép token. Giữ URL add-on là auto (khuyến nghị); chỉ nhập URL riêng khi mạng có cấu hình đặc biệt.",
         "data": {
-          "url": "URL add-on",
+          "url": "URL add-on (auto hoặc tùy chỉnh)",
           "token": "Integration token",
           "default_entity_id": "Loa mặc định cho Media Browser"
         }
@@ -34,7 +34,7 @@
     "step": {
       "init": {
         "title": "Phát từ Media Browser",
-        "description": "Chọn media_player vật lý sẽ nhận nhạc khi bạn phát hoặc tìm kiếm từ entity YouTube Pro Media Browser.",
+        "description": "Chọn media_player vật lý sẽ nhận nhạc hoặc video từ entity YouTube Pro Media Browser.",
         "data": {
           "default_entity_id": "Loa mặc định"
         }

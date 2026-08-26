@@ -21,6 +21,17 @@ from .const import DOMAIN
 from .coordinator import YouTubeProCoordinator
 
 MAX_BROWSE_TRACKS = 200
+MEDIA_KIND_AUDIO = "audio"
+MEDIA_KIND_VIDEO = "video"
+
+DEFAULT_VIDEO_DISCOVERY = (
+    {"title": "Thịnh hành", "query": "video thịnh hành Việt Nam"},
+    {"title": "Âm nhạc", "query": "music video Việt Nam mới nhất"},
+    {"title": "Giải trí", "query": "video giải trí Việt Nam"},
+    {"title": "Tin tức", "query": "tin tức mới nhất Việt Nam"},
+    {"title": "Công nghệ", "query": "video công nghệ mới nhất"},
+    {"title": "Gaming", "query": "gaming Việt Nam thịnh hành"},
+)
 
 
 def _encode_identifier(value: str) -> str:
@@ -33,6 +44,22 @@ def _decode_identifier(value: str) -> str:
         return urlsafe_b64decode(f"{value}{padding}").decode()
     except (UnicodeDecodeError, ValueError) as error:
         raise BrowseError("Media Browser identifier không hợp lệ") from error
+
+
+def _normalize_media_kind(value: Any) -> str:
+    return (
+        MEDIA_KIND_VIDEO
+        if str(value or "").strip().casefold() in {"video", "movie", "watch"}
+        else MEDIA_KIND_AUDIO
+    )
+
+
+def _media_type(media_kind: str) -> MediaType:
+    return MediaType.VIDEO if media_kind == MEDIA_KIND_VIDEO else MediaType.MUSIC
+
+
+def _media_class(media_kind: str) -> MediaClass:
+    return MediaClass.VIDEO if media_kind == MEDIA_KIND_VIDEO else MediaClass.MUSIC
 
 
 def _source_item(
@@ -58,20 +85,27 @@ def _source_item(
 
 
 def _track_item(
-    track: dict[str, Any], identifier: str | None = None
+    track: dict[str, Any],
+    identifier: str | None = None,
+    *,
+    media_kind: str | None = None,
 ) -> BrowseMediaSource | None:
     url = str(track.get("url") or "").strip()
     if not url:
         return None
+    normalized_kind = _normalize_media_kind(
+        media_kind if media_kind is not None else track.get("media_kind")
+    )
     title = str(track.get("title") or "YouTube")
     channel = str(track.get("channel") or "").strip()
     if channel:
         title = f"{title} · {channel}"
+    prefix = "video-track" if normalized_kind == MEDIA_KIND_VIDEO else "track"
     return _source_item(
-        identifier or f"track/{_encode_identifier(url)}",
+        identifier or f"{prefix}/{_encode_identifier(url)}",
         title,
-        media_class=MediaClass.MUSIC,
-        media_type=MediaType.MUSIC,
+        media_class=_media_class(normalized_kind),
+        media_type=_media_type(normalized_kind),
         can_play=True,
         can_expand=False,
         thumbnail=str(track.get("thumbnail") or ""),
@@ -83,14 +117,35 @@ def _track_children(
 ) -> list[BrowseMediaSource]:
     children = []
     for index, track in enumerate(tracks):
+        if not isinstance(track, dict):
+            continue
         identifier = None
         if playlist_name:
-            identifier = (
-                f"playlist-track/{_encode_identifier(playlist_name)}/{index}"
+            media_kind = _normalize_media_kind(track.get("media_kind"))
+            prefix = (
+                "video-playlist-track"
+                if media_kind == MEDIA_KIND_VIDEO
+                else "playlist-track"
             )
+            identifier = f"{prefix}/{_encode_identifier(playlist_name)}/{index}"
         if item := _track_item(track, identifier):
             children.append(item)
     return children
+
+
+def _children_media_class(
+    tracks: Iterable[dict[str, Any]],
+) -> MediaClass | None:
+    kinds = {
+        _normalize_media_kind(track.get("media_kind"))
+        for track in tracks
+        if isinstance(track, dict) and track.get("url")
+    }
+    if kinds == {MEDIA_KIND_VIDEO}:
+        return MediaClass.VIDEO
+    if kinds == {MEDIA_KIND_AUDIO}:
+        return MediaClass.MUSIC
+    return None
 
 
 async def async_get_media_source(hass: HomeAssistant) -> MediaSource:
@@ -121,12 +176,18 @@ class YouTubeProMediaSource(MediaSource):
     async def async_resolve_media(self, item: MediaSourceItem) -> PlayMedia:
         """Resolve a selected YouTube track to the add-on relay."""
         try:
-            kind, separator, encoded = item.identifier.partition("/")
+            identifier = str(item.identifier or "")
+            kind, separator, encoded = identifier.partition("/")
             if not separator or not encoded:
                 raise Unresolvable("Mục Media Browser này không thể phát trực tiếp")
+
+            media_kind = MEDIA_KIND_AUDIO
             if kind == "track":
                 url = _decode_identifier(encoded)
-            elif kind == "playlist-track":
+            elif kind == "video-track":
+                media_kind = MEDIA_KIND_VIDEO
+                url = _decode_identifier(encoded)
+            elif kind in {"playlist-track", "video-playlist-track"}:
                 encoded_name, index_separator, raw_index = encoded.partition("/")
                 if not index_separator:
                     raise Unresolvable("Playlist identifier không hợp lệ")
@@ -135,12 +196,27 @@ class YouTubeProMediaSource(MediaSource):
                 )
                 tracks = playlist.get("tracks") or []
                 try:
-                    url = str(tracks[int(raw_index)]["url"])
+                    selected_track = tracks[int(raw_index)]
+                    url = str(selected_track["url"])
+                    media_kind = (
+                        MEDIA_KIND_VIDEO
+                        if kind == "video-playlist-track"
+                        else _normalize_media_kind(selected_track.get("media_kind"))
+                    )
                 except (IndexError, KeyError, TypeError, ValueError) as error:
-                    raise Unresolvable("Không tìm thấy bài hát trong playlist") from error
+                    raise Unresolvable(
+                        "Không tìm thấy mục trong playlist"
+                    ) from error
             else:
                 raise Unresolvable("Mục Media Browser này không thể phát trực tiếp")
-            payload = await self.api.async_resolve(url)
+
+            if media_kind == MEDIA_KIND_VIDEO:
+                resolve_options: dict[str, Any] = {"media_kind": media_kind}
+                if item.target_media_player:
+                    resolve_options["entity_id"] = item.target_media_player
+                payload = await self.api.async_resolve(url, **resolve_options)
+            else:
+                payload = await self.api.async_resolve(url)
         except BrowseError as error:
             raise Unresolvable(str(error)) from error
         except YouTubeProApiError as error:
@@ -154,9 +230,10 @@ class YouTubeProMediaSource(MediaSource):
     async def async_browse_media(self, item: MediaSourceItem) -> BrowseMediaSource:
         """Browse playlists, queue, history and YouTube searches."""
         try:
-            if not item.identifier:
+            identifier = str(item.identifier or "")
+            if not identifier:
                 return await self._async_root()
-            kind, _, encoded = item.identifier.partition("/")
+            kind, _, encoded = identifier.partition("/")
             if kind == "playlists" and not encoded:
                 return await self._async_playlists()
             if kind == "playlist" and encoded:
@@ -166,11 +243,23 @@ class YouTubeProMediaSource(MediaSource):
             if kind == "history" and not encoded:
                 return await self._async_track_collection("history", "Nghe gần đây")
             if kind == "discover" and not encoded:
-                return await self._async_search_directory("discover", "Khám phá")
+                return await self._async_search_directory(
+                    "discover", "Khám phá", MEDIA_KIND_AUDIO
+                )
             if kind == "searches" and not encoded:
-                return await self._async_search_directory("searches", "Tìm kiếm gần đây")
+                return await self._async_search_directory(
+                    "searches", "Tìm kiếm gần đây", MEDIA_KIND_AUDIO
+                )
+            if kind == "videos" and not encoded:
+                return await self._async_video_directory()
             if kind == "search" and encoded:
-                return await self._async_search(_decode_identifier(encoded))
+                return await self._async_search(
+                    _decode_identifier(encoded), MEDIA_KIND_AUDIO
+                )
+            if kind == "video-search" and encoded:
+                return await self._async_search(
+                    _decode_identifier(encoded), MEDIA_KIND_VIDEO
+                )
         except YouTubeProApiError as error:
             raise BrowseError(str(error)) from error
         raise BrowseError("Không hỗ trợ mục Media Browser này")
@@ -192,6 +281,12 @@ class YouTubeProMediaSource(MediaSource):
                 "Tìm kiếm gần đây",
                 media_class=MediaClass.DIRECTORY,
                 media_type=MediaType.MUSIC,
+            ),
+            _source_item(
+                "videos",
+                "Video YouTube",
+                media_class=MediaClass.DIRECTORY,
+                media_type=MediaType.VIDEO,
             ),
             _source_item(
                 "playlists",
@@ -256,13 +351,16 @@ class YouTubeProMediaSource(MediaSource):
         return self._track_collection(identifier, title, payload)
 
     async def _async_search_directory(
-        self, identifier: str, title: str
+        self, identifier: str, title: str, media_kind: str
     ) -> BrowseMediaSource:
         library = await self.api.async_library()
         entries: list[tuple[str, str]] = []
         if identifier == "discover":
             entries.extend(
-                (str(item.get("title") or item.get("query")), str(item.get("query") or ""))
+                (
+                    str(item.get("title") or item.get("query")),
+                    str(item.get("query") or ""),
+                )
                 for item in library.get("discovery") or []
                 if item.get("query")
             )
@@ -273,12 +371,75 @@ class YouTubeProMediaSource(MediaSource):
                 if query
             )
             entries.extend(
-                (str(item.get("title") or item.get("query")), str(item.get("query") or ""))
+                (
+                    str(item.get("title") or item.get("query")),
+                    str(item.get("query") or ""),
+                )
                 for item in library.get("discovery") or []
                 if item.get("query")
             )
+        return self._search_collection(identifier, title, entries, media_kind)
+
+    async def _async_video_directory(self) -> BrowseMediaSource:
+        library = await self.api.async_library()
+        entries: list[tuple[str, str]] = []
+        entries.extend(
+            (
+                str(item.get("title") or item.get("query")),
+                str(item.get("query") or ""),
+            )
+            for item in library.get("video_discovery") or DEFAULT_VIDEO_DISCOVERY
+            if item.get("query")
+        )
+        entries.extend(
+            (f"Video đã tìm: {query}", str(query))
+            for query in library.get("search_history") or []
+            if query
+        )
+        return self._search_collection(
+            "videos", "Video YouTube", entries, MEDIA_KIND_VIDEO
+        )
+
+    async def _async_search(
+        self, query: str, media_kind: str
+    ) -> BrowseMediaSource:
+        if media_kind == MEDIA_KIND_VIDEO:
+            payload = await self.api.async_search(
+                query, limit=20, media_kind=media_kind
+            )
+        else:
+            payload = await self.api.async_search(query, limit=20)
+        tracks = []
+        for raw_track in payload.get("results") or []:
+            if not isinstance(raw_track, dict):
+                continue
+            track = dict(raw_track)
+            track["media_kind"] = media_kind
+            tracks.append(track)
+        result = {
+            "tracks": tracks,
+            "total": len(tracks),
+            "has_more": bool(payload.get("has_more")),
+        }
+        prefix = "video-search" if media_kind == MEDIA_KIND_VIDEO else "search"
+        title_prefix = "Video" if media_kind == MEDIA_KIND_VIDEO else "Kết quả"
+        return self._track_collection(
+            f"{prefix}/{_encode_identifier(query)}",
+            f"{title_prefix}: {query}",
+            result,
+            media_kind=media_kind,
+        )
+
+    def _search_collection(
+        self,
+        identifier: str,
+        title: str,
+        entries: Iterable[tuple[str, str]],
+        media_kind: str,
+    ) -> BrowseMediaSource:
         seen: set[str] = set()
         children = []
+        prefix = "video-search" if media_kind == MEDIA_KIND_VIDEO else "search"
         for label, query in entries:
             normalized = query.casefold()
             if not query or normalized in seen:
@@ -286,23 +447,14 @@ class YouTubeProMediaSource(MediaSource):
             seen.add(normalized)
             children.append(
                 _source_item(
-                    f"search/{_encode_identifier(query)}",
+                    f"{prefix}/{_encode_identifier(query)}",
                     label,
                     media_class=MediaClass.DIRECTORY,
-                    media_type=MediaType.MUSIC,
+                    media_type=_media_type(media_kind),
                 )
             )
-        return self._collection(identifier, title, children)
-
-    async def _async_search(self, query: str) -> BrowseMediaSource:
-        payload = await self.api.async_search(query, limit=20)
-        result = {
-            "tracks": payload.get("results") or [],
-            "total": len(payload.get("results") or []),
-            "has_more": bool(payload.get("has_more")),
-        }
-        return self._track_collection(
-            f"search/{_encode_identifier(query)}", f"Kết quả: {query}", result
+        return self._collection(
+            identifier, title, children, media_type=_media_type(media_kind)
         )
 
     def _track_collection(
@@ -311,12 +463,22 @@ class YouTubeProMediaSource(MediaSource):
         title: str,
         payload: dict[str, Any],
         playlist_name: str | None = None,
+        media_kind: str | None = None,
     ) -> BrowseMediaSource:
-        children = _track_children(payload.get("tracks") or [], playlist_name)
+        tracks = []
+        for raw_track in payload.get("tracks") or []:
+            if not isinstance(raw_track, dict):
+                continue
+            track = dict(raw_track)
+            if media_kind is not None:
+                track["media_kind"] = media_kind
+            tracks.append(track)
+        children = _track_children(tracks, playlist_name)
         total = int(payload.get("total") or len(children))
         not_shown = max(0, total - len(children))
         if payload.get("has_more") and not_shown == 0:
             not_shown = 1
+        child_class = _children_media_class(tracks)
         return BrowseMediaSource(
             domain=DOMAIN,
             identifier=identifier,
@@ -325,20 +487,24 @@ class YouTubeProMediaSource(MediaSource):
             title=title,
             can_play=False,
             can_expand=True,
-            children_media_class=MediaClass.MUSIC,
+            children_media_class=child_class,
             children=children,
             not_shown=not_shown,
         )
 
     @staticmethod
     def _collection(
-        identifier: str, title: str, children: list[BrowseMediaSource]
+        identifier: str,
+        title: str,
+        children: list[BrowseMediaSource],
+        *,
+        media_type: MediaType = MediaType.MUSIC,
     ) -> BrowseMediaSource:
         return BrowseMediaSource(
             domain=DOMAIN,
             identifier=identifier,
             media_class=MediaClass.DIRECTORY,
-            media_content_type=MediaType.MUSIC,
+            media_content_type=media_type,
             title=title,
             can_play=False,
             can_expand=True,

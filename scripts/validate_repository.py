@@ -36,6 +36,7 @@ def main() -> int:
         "manifest.json",
         "media_player.py",
         "media_source.py",
+        "addon_discovery.py",
         "sensor.py",
         "services.yaml",
         "strings.json",

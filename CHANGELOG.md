@@ -1,5 +1,15 @@
 # Changelog
 
+## 5.0.1 - 2026-08-26
+
+- Đồng bộ custom integration với Add-on YouTube Pro 5.0.1.
+- Thêm khu vực **Video YouTube** trong Media Browser, tìm kiếm video, thumbnail và resolve video relay.
+- Truyền `media_kind` qua API integration; giữ mặc định audio để tương thích ngược.
+- Truyền target `media_player` khi resolve video để add-on chọn đúng relay hoặc audio fallback cho HomePod/AirPlay.
+- Tự dò endpoint add-on qua Supervisor/DNS nội bộ; không cần nhập IP Home Assistant trong cấu hình thông thường.
+- Mở rộng service `play` và `enqueue` cho nội dung video.
+- Giữ nguyên playlist, queue, history, timer, điều khiển playback và token riêng.
+
 ## 4.0.0 - 2026-08-25
 
 - Tách custom integration YouTube Pro khỏi bản Lite.

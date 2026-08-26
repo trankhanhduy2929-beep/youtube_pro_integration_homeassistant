@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from collections.abc import Mapping
 from typing import Any
 from urllib.parse import urlsplit, urlunsplit
@@ -25,6 +26,11 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
 )
 
+from .addon_discovery import (
+    async_discover_addon_urls,
+    is_auto_url,
+    normalize_addon_url,
+)
 from .api import (
     YouTubeProApi,
     YouTubeProApiError,
@@ -36,6 +42,8 @@ from .const import CONF_DEFAULT_ENTITY_ID, CONF_TOKEN, DEFAULT_URL, DOMAIN
 
 def normalize_base_url(value: str) -> str:
     """Validate and normalize an add-on base URL."""
+    if is_auto_url(value):
+        return DEFAULT_URL
     validated = cv.url(value.strip())
     parsed = urlsplit(validated)
     if (
@@ -55,8 +63,8 @@ def user_schema(default_url: str = DEFAULT_URL) -> vol.Schema:
     """Return the config form schema."""
     return vol.Schema(
         {
-            vol.Required(CONF_URL, default=default_url): TextSelector(
-                TextSelectorConfig(type=TextSelectorType.URL)
+            vol.Optional(CONF_URL, default=default_url): TextSelector(
+                TextSelectorConfig(type=TextSelectorType.TEXT)
             ),
             vol.Required(CONF_TOKEN): TextSelector(
                 TextSelectorConfig(type=TextSelectorType.PASSWORD)
@@ -79,9 +87,35 @@ class YouTubeProConfigFlow(ConfigFlow, domain=DOMAIN):
         """Return the options flow."""
         return YouTubeProOptionsFlow()
 
-    async def _validate(self, url: str, token: str) -> dict[str, Any]:
+    async def _validate(
+        self, url: str, token: str, *, timeout: int = 10
+    ) -> dict[str, Any]:
         api = YouTubeProApi(async_get_clientsession(self.hass), url, token)
-        return await api.async_health()
+        return await api.async_health(timeout=timeout)
+
+    async def _validate_auto(self, token: str) -> tuple[str, dict[str, Any]]:
+        """Discover and validate the first reachable add-on endpoint."""
+        session = async_get_clientsession(self.hass)
+        candidates = await async_discover_addon_urls(session, hass=self.hass)
+        if not candidates:
+            raise YouTubeProCannotConnect("Không tìm thấy YouTube Pro add-on")
+
+        async def probe(url: str) -> tuple[str, dict[str, Any] | None, Exception | None]:
+            try:
+                return url, await self._validate(url, token, timeout=5), None
+            except Exception as error:  # noqa: BLE001 - probe all local candidates
+                return url, None, error
+
+        results = await asyncio.gather(*(probe(url) for url in candidates))
+        auth_error: YouTubeProInvalidAuth | None = None
+        for url, health, error in results:
+            if health is not None:
+                return url, health
+            if isinstance(error, YouTubeProInvalidAuth) and auth_error is None:
+                auth_error = error
+        if auth_error:
+            raise auth_error
+        raise YouTubeProCannotConnect("Không thể tự tìm thấy YouTube Pro add-on")
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
@@ -90,9 +124,15 @@ class YouTubeProConfigFlow(ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
         if user_input is not None:
             try:
-                url = normalize_base_url(user_input[CONF_URL])
+                requested_url = normalize_base_url(str(user_input.get(CONF_URL) or ""))
                 token = str(user_input[CONF_TOKEN]).strip()
-                health = await self._validate(url, token)
+                if is_auto_url(requested_url):
+                    url, health = await self._validate_auto(token)
+                else:
+                    url = normalize_addon_url(requested_url)
+                    if not url:
+                        raise vol.Invalid("invalid_url")
+                    health = await self._validate(url, token)
             except vol.Invalid:
                 errors["base"] = "invalid_url"
             except YouTubeProInvalidAuth:

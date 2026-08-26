@@ -24,6 +24,14 @@ play:
       name: Tiêu đề
       selector:
         text:
+    media_kind:
+      name: Loại nội dung
+      default: audio
+      selector:
+        select:
+          options:
+            - audio
+            - video
     repeat:
       name: Chế độ lặp
       default: "off"
@@ -101,6 +109,14 @@ enqueue:
       name: Tiêu đề
       selector:
         text:
+    media_kind:
+      name: Loại nội dung
+      default: audio
+      selector:
+        select:
+          options:
+            - audio
+            - video
 
 set_timer:
   name: Đặt lịch phát

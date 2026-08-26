@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 
 import pytest
-from homeassistant.components.media_player import SearchMediaQuery
+from homeassistant.components.media_player import MediaClass, SearchMediaQuery
 from homeassistant.components.media_player.const import MediaType
 from homeassistant.components.media_source import MediaSourceItem
 from homeassistant.core import HomeAssistant
@@ -32,12 +32,25 @@ TRACKS = [
     },
 ]
 
+VIDEO_TRACKS = [
+    {
+        "id": "video-one",
+        "title": "Video Một",
+        "url": "https://www.youtube.com/watch?v=video-one",
+        "thumbnail": "https://i.ytimg.com/vi/video-one/mqdefault.jpg",
+        "duration": 240,
+        "channel": "Kênh Video",
+        "media_kind": "video",
+    }
+]
+
 
 class FakeApi:
     base_url = "http://homeassistant.local:2032"
 
     def __init__(self):
         self.calls = []
+        self.resolve_targets = []
 
     async def async_library(self):
         return {
@@ -52,6 +65,7 @@ class FakeApi:
             "history_count": 1,
             "search_history": ["nhạc chill"],
             "discovery": [{"title": "Mix dành cho bạn", "query": "nhạc hay"}],
+            "video_discovery": [{"title": "Thịnh hành", "query": "video hot"}],
         }
 
     async def async_playlist(self, name, **kwargs):
@@ -65,18 +79,39 @@ class FakeApi:
         return {"tracks": TRACKS[:1], "total": 1, "has_more": False}
 
     async def async_search(self, query, **kwargs):
-        self.calls.append(("search", query))
-        return {"results": TRACKS, "has_more": False}
-
-    async def async_resolve(self, url):
-        self.calls.append(("resolve", url))
+        media_kind = kwargs.get("media_kind", "audio")
+        self.calls.append(("search", query, media_kind))
         return {
-            "media_url": "http://192.168.1.2:2032/api/media/token/audio.m4a",
-            "content_type": "audio/mp4",
+            "results": VIDEO_TRACKS if media_kind == "video" else TRACKS,
+            "has_more": False,
         }
 
-    async def async_play(self, entity_id, url, title, repeat, shuffle):
-        self.calls.append(("play", entity_id, url, repeat, shuffle))
+    async def async_resolve(self, url, **kwargs):
+        media_kind = kwargs.get("media_kind", "audio")
+        self.calls.append(("resolve", url, media_kind))
+        self.resolve_targets.append(kwargs.get("entity_id"))
+        return {
+            "media_url": (
+                "http://192.168.1.2:2032/api/media/token/video.mp4"
+                if media_kind == "video"
+                else "http://192.168.1.2:2032/api/media/token/audio.m4a"
+            ),
+            "content_type": "video/mp4" if media_kind == "video" else "audio/mp4",
+        }
+
+    async def async_play(
+        self, entity_id, url, title, repeat, shuffle, **kwargs
+    ):
+        self.calls.append(
+            (
+                "play",
+                entity_id,
+                url,
+                repeat,
+                shuffle,
+                kwargs.get("media_kind", "audio"),
+            )
+        )
 
     async def async_play_playlist(self, entity_id, name, index, repeat, shuffle):
         self.calls.append(("playlist", entity_id, name, index, repeat, shuffle))
@@ -91,7 +126,7 @@ class FakeCoordinator:
         self.api = api
         self.last_update_success = True
         self.data = {
-            "version": "4.0.0",
+            "version": "5.0.1",
             "sessions": {
                 "media_player.living_room": {
                     "state": "playing",
@@ -113,6 +148,16 @@ class FakeCoordinator:
         return lambda: None
 
 
+def make_player(hass, api):
+    coordinator = FakeCoordinator(hass, api)
+    entry = SimpleNamespace(
+        entry_id="entry-1",
+        options={"default_entity_id": "media_player.living_room"},
+        data={},
+    )
+    return YouTubeProPlayer(coordinator, entry)
+
+
 @pytest.mark.asyncio
 async def test_media_source_browse_and_resolve(tmp_path):
     hass = HomeAssistant(str(tmp_path))
@@ -120,7 +165,7 @@ async def test_media_source_browse_and_resolve(tmp_path):
     source = YouTubeProMediaSource(hass, FakeCoordinator(hass, api))
 
     root = await source.async_browse_media(MediaSourceItem(hass, DOMAIN, "", None))
-    assert len(root.children) == 5
+    assert len(root.children) == 6
 
     identifier = f"playlist/{_encode_identifier('Yêu thích')}"
     playlist = await source.async_browse_media(
@@ -133,20 +178,46 @@ async def test_media_source_browse_and_resolve(tmp_path):
         MediaSourceItem(hass, DOMAIN, playlist.children[1].identifier, None)
     )
     assert resolved.mime_type == "audio/mp4"
-    assert api.calls[-1] == ("resolve", TRACKS[1]["url"])
+    assert api.calls[-1] == ("resolve", TRACKS[1]["url"], "audio")
+
+
+@pytest.mark.asyncio
+async def test_video_media_browser_search_and_resolve(tmp_path):
+    hass = HomeAssistant(str(tmp_path))
+    api = FakeApi()
+    source = YouTubeProMediaSource(hass, FakeCoordinator(hass, api))
+
+    video_root = await source.async_browse_media(
+        MediaSourceItem(hass, DOMAIN, "videos", None)
+    )
+    assert video_root.media_content_type == MediaType.VIDEO
+    assert video_root.children
+
+    identifier = f"video-search/{_encode_identifier('video hot')}"
+    results = await source.async_browse_media(
+        MediaSourceItem(hass, DOMAIN, identifier, None)
+    )
+    assert results.children[0].media_class == MediaClass.VIDEO
+    assert results.children[0].identifier.startswith("video-track/")
+
+    resolved = await source.async_resolve_media(
+        MediaSourceItem(
+            hass,
+            DOMAIN,
+            results.children[0].identifier,
+            "media_player.living_room",
+        )
+    )
+    assert resolved.mime_type == "video/mp4"
+    assert api.calls[-1] == ("resolve", VIDEO_TRACKS[0]["url"], "video")
+    assert api.resolve_targets[-1] == "media_player.living_room"
 
 
 @pytest.mark.asyncio
 async def test_virtual_player_search_and_play(tmp_path):
     hass = HomeAssistant(str(tmp_path))
     api = FakeApi()
-    coordinator = FakeCoordinator(hass, api)
-    entry = SimpleNamespace(
-        entry_id="entry-1",
-        options={"default_entity_id": "media_player.living_room"},
-        data={},
-    )
-    player = YouTubeProPlayer(coordinator, entry)
+    player = make_player(hass, api)
 
     results = await player.async_search_media(
         SearchMediaQuery(search_query="nhạc chill")
@@ -158,5 +229,43 @@ async def test_virtual_player_search_and_play(tmp_path):
     await player.async_media_next_track()
 
     assert player.media_title == "Bài Một"
-    assert ("play", "media_player.living_room", TRACKS[0]["url"], "all", True) in api.calls
-    assert any(call[:3] == ("control", "media_player.living_room", "next") for call in api.calls)
+    assert (
+        "play",
+        "media_player.living_room",
+        TRACKS[0]["url"],
+        "all",
+        True,
+        "audio",
+    ) in api.calls
+    assert any(
+        call[:3] == ("control", "media_player.living_room", "next")
+        for call in api.calls
+    )
+
+
+@pytest.mark.asyncio
+async def test_virtual_player_video_search_and_play(tmp_path):
+    hass = HomeAssistant(str(tmp_path))
+    api = FakeApi()
+    player = make_player(hass, api)
+
+    results = await player.async_search_media(
+        SearchMediaQuery(
+            search_query="video hot",
+            media_content_type=MediaType.VIDEO,
+        )
+    )
+    assert len(results.result) == 1
+    assert results.result[0].media_class == MediaClass.VIDEO
+    await player.async_play_media(
+        MediaType.VIDEO, results.result[0].media_content_id
+    )
+
+    assert (
+        "play",
+        "media_player.living_room",
+        VIDEO_TRACKS[0]["url"],
+        "all",
+        True,
+        "video",
+    ) in api.calls

@@ -4,9 +4,9 @@
     "step": {
       "user": {
         "title": "Connect YouTube Pro",
-        "description": "Open the add-on → Timers → Home Assistant integration to copy the token. The URL is usually http://homeassistant.local:2032 or the Home Assistant IP on port 2032.",
+        "description": "Open the add-on → Timers → Home Assistant integration to copy the token. Keep the add-on URL as auto (recommended); enter a custom URL only for a special network.",
         "data": {
-          "url": "Add-on URL",
+          "url": "Add-on URL (auto or custom)",
           "token": "Integration token",
           "default_entity_id": "Default Media Browser speaker"
         }
@@ -34,7 +34,7 @@
     "step": {
       "init": {
         "title": "Media Browser playback",
-        "description": "Choose the physical media_player used when you play or search from the YouTube Pro Media Browser entity.",
+        "description": "Choose the physical media_player used for music or video from the YouTube Pro Media Browser entity.",
         "data": {
           "default_entity_id": "Default speaker"
         }

@@ -45,6 +45,7 @@ PLAY_SCHEMA = vol.Schema(
         vol.Required(ATTR_ENTITY_ID): media_player_entity,
         vol.Required("url"): cv.url,
         vol.Optional("title", default="YouTube"): cv.string,
+        vol.Optional("media_kind", default="audio"): vol.In(("audio", "video")),
         vol.Optional("repeat", default="off"): vol.In(REPEAT_MODES),
         vol.Optional("shuffle", default=False): cv.boolean,
     }
@@ -66,6 +67,7 @@ ENQUEUE_SCHEMA = vol.Schema(
         vol.Optional(CONF_CONFIG_ENTRY_ID): cv.string,
         vol.Required("url"): cv.url,
         vol.Optional("title", default="YouTube"): cv.string,
+        vol.Optional("media_kind", default="audio"): vol.In(("audio", "video")),
     }
 )
 
@@ -128,6 +130,7 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 call.data["title"],
                 call.data["repeat"],
                 call.data["shuffle"],
+                media_kind=call.data["media_kind"],
             ),
         )
 
@@ -148,7 +151,11 @@ async def async_register_services(hass: HomeAssistant) -> None:
         coordinator = coordinator_for_call(hass, call)
         await refresh_after_service(
             coordinator,
-            coordinator.api.async_enqueue(call.data["url"], call.data["title"]),
+            coordinator.api.async_enqueue(
+                call.data["url"],
+                call.data["title"],
+                media_kind=call.data["media_kind"],
+            ),
         )
 
     async def async_set_timer(call: ServiceCall) -> None:

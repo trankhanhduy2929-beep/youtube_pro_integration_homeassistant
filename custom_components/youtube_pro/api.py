@@ -29,6 +29,15 @@ class YouTubeProApi:
         self.base_url = base_url.rstrip("/")
         self._token = token.strip()
 
+    @staticmethod
+    def _normalize_media_kind(value: Any) -> str:
+        """Normalize the media kind accepted by the add-on API."""
+        return (
+            "video"
+            if str(value or "").casefold() in {"video", "movie", "watch"}
+            else "audio"
+        )
+
     async def _json_response(self, response: ClientResponse) -> dict[str, Any]:
         try:
             payload = await response.json(content_type=None)
@@ -74,9 +83,11 @@ class YouTubeProApi:
                 "Không thể kết nối YouTube Pro add-on"
             ) from error
 
-    async def async_health(self) -> dict[str, Any]:
+    async def async_health(self, *, timeout: int = 10) -> dict[str, Any]:
         """Validate the endpoint and token."""
-        return await self._request("GET", "/api/integration/health", timeout=10)
+        return await self._request(
+            "GET", "/api/integration/health", timeout=timeout
+        )
 
     async def async_status(self) -> dict[str, Any]:
         """Fetch coordinator data."""
@@ -89,19 +100,35 @@ class YouTubeProApi:
         title: str,
         repeat: str,
         shuffle: bool,
+        *,
+        media_kind: str = "audio",
+        track: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         """Play one YouTube URL."""
+        normalized_kind = self._normalize_media_kind(media_kind)
+        request_track = dict(track or {})
+        request_track.setdefault("url", url)
+        request_track.setdefault("title", title)
+        request_track.setdefault("media_kind", normalized_kind)
+        payload: dict[str, Any] = {
+            "entity_id": entity_id,
+            "url": url,
+            "title": title,
+            "repeat": repeat,
+            "shuffle": shuffle,
+            "source_name": "Home Assistant service",
+        }
+        if normalized_kind == "video" or track is not None:
+            payload.update(
+                {
+                    "media_kind": normalized_kind,
+                    "track": request_track,
+                }
+            )
         return await self._request(
             "POST",
             "/api/integration/play",
-            payload={
-                "entity_id": entity_id,
-                "url": url,
-                "title": title,
-                "repeat": repeat,
-                "shuffle": shuffle,
-                "source_name": "Home Assistant service",
-            },
+            payload=payload,
             timeout=90,
         )
 
@@ -127,12 +154,18 @@ class YouTubeProApi:
             timeout=90,
         )
 
-    async def async_enqueue(self, url: str, title: str) -> dict[str, Any]:
+    async def async_enqueue(
+        self, url: str, title: str, *, media_kind: str = "audio"
+    ) -> dict[str, Any]:
         """Append a URL to the add-on queue."""
+        normalized_kind = self._normalize_media_kind(media_kind)
+        payload: dict[str, Any] = {"url": url, "title": title}
+        if normalized_kind == "video":
+            payload["media_kind"] = normalized_kind
         return await self._request(
             "POST",
             "/api/integration/enqueue",
-            payload={"url": url, "title": title},
+            payload=payload,
         )
 
     async def async_set_timer(self, timer: dict[str, Any]) -> dict[str, Any]:
@@ -177,22 +210,49 @@ class YouTubeProApi:
         )
 
     async def async_search(
-        self, query: str, *, offset: int = 0, limit: int = 20
+        self,
+        query: str,
+        *,
+        offset: int = 0,
+        limit: int = 20,
+        media_kind: str = "audio",
     ) -> dict[str, Any]:
         """Search YouTube through the add-on extractor."""
+        normalized_kind = self._normalize_media_kind(media_kind)
         return await self._request(
             "POST",
             "/api/integration/search",
-            payload={"query": query, "offset": offset, "limit": limit},
+            payload={
+                "query": query,
+                "offset": offset,
+                "limit": limit,
+                **(
+                    {"media_kind": normalized_kind}
+                    if normalized_kind == "video"
+                    else {}
+                ),
+            },
             timeout=45,
         )
 
-    async def async_resolve(self, url: str) -> dict[str, Any]:
+    async def async_resolve(
+        self,
+        url: str,
+        *,
+        media_kind: str = "audio",
+        entity_id: str | None = None,
+    ) -> dict[str, Any]:
         """Resolve a YouTube URL to the add-on relay."""
+        normalized_kind = self._normalize_media_kind(media_kind)
+        payload: dict[str, Any] = {"url": url}
+        if normalized_kind == "video":
+            payload["media_kind"] = normalized_kind
+        if entity_id:
+            payload["entity_id"] = entity_id
         return await self._request(
             "POST",
             "/api/integration/resolve",
-            payload={"url": url},
+            payload=payload,
             timeout=90,
         )
 
