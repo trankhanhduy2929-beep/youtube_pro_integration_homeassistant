@@ -24,6 +24,7 @@ from .const import (
     SERVICE_PLAY,
     SERVICE_PLAY_PLAYLIST,
     SERVICE_SET_TIMER,
+    SERVICE_START_RADIO,
     TIMER_TYPES,
 )
 from .coordinator import YouTubeProConfigEntry, YouTubeProCoordinator
@@ -65,9 +66,25 @@ PLAY_PLAYLIST_SCHEMA = vol.Schema(
 ENQUEUE_SCHEMA = vol.Schema(
     {
         vol.Optional(CONF_CONFIG_ENTRY_ID): cv.string,
+        vol.Optional(ATTR_ENTITY_ID): media_player_entity,
         vol.Required("url"): cv.url,
         vol.Optional("title", default="YouTube"): cv.string,
         vol.Optional("media_kind", default="audio"): vol.In(("audio", "video")),
+        vol.Optional("position", default="end"): vol.In(("next", "end")),
+    }
+)
+
+START_RADIO_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_CONFIG_ENTRY_ID): cv.string,
+        vol.Required(ATTR_ENTITY_ID): media_player_entity,
+        vol.Required("url"): cv.url,
+        vol.Optional("title", default="YouTube"): cv.string,
+        vol.Optional("media_kind", default="audio"): vol.In(("audio", "video")),
+        vol.Optional("mode", default="replace"): vol.In(("replace", "append")),
+        vol.Optional("limit", default=24): vol.All(
+            vol.Coerce(int), vol.Range(min=5, max=30)
+        ),
     }
 )
 
@@ -117,7 +134,16 @@ async def refresh_after_service(
 
 async def async_register_services(hass: HomeAssistant) -> None:
     """Register integration services once."""
-    if hass.services.has_service(DOMAIN, SERVICE_PLAY):
+    if all(
+        hass.services.has_service(DOMAIN, service)
+        for service in (
+            SERVICE_PLAY,
+            SERVICE_PLAY_PLAYLIST,
+            SERVICE_ENQUEUE,
+            SERVICE_START_RADIO,
+            SERVICE_SET_TIMER,
+        )
+    ):
         return
 
     async def async_play(call: ServiceCall) -> None:
@@ -155,6 +181,22 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 call.data["url"],
                 call.data["title"],
                 media_kind=call.data["media_kind"],
+                entity_id=call.data.get(ATTR_ENTITY_ID),
+                position=call.data["position"],
+            ),
+        )
+
+    async def async_start_radio(call: ServiceCall) -> None:
+        coordinator = coordinator_for_call(hass, call)
+        await refresh_after_service(
+            coordinator,
+            coordinator.api.async_start_radio(
+                call.data[ATTR_ENTITY_ID],
+                call.data["url"],
+                call.data["title"],
+                media_kind=call.data["media_kind"],
+                limit=call.data["limit"],
+                mode=call.data["mode"],
             ),
         )
 
@@ -193,6 +235,12 @@ async def async_register_services(hass: HomeAssistant) -> None:
         DOMAIN, SERVICE_ENQUEUE, async_enqueue, schema=ENQUEUE_SCHEMA
     )
     hass.services.async_register(
+        DOMAIN,
+        SERVICE_START_RADIO,
+        async_start_radio,
+        schema=START_RADIO_SCHEMA,
+    )
+    hass.services.async_register(
         DOMAIN, SERVICE_SET_TIMER, async_set_timer, schema=SET_TIMER_SCHEMA
     )
 
@@ -224,6 +272,7 @@ async def async_unload_entry(
             SERVICE_PLAY,
             SERVICE_PLAY_PLAYLIST,
             SERVICE_ENQUEUE,
+            SERVICE_START_RADIO,
             SERVICE_SET_TIMER,
         ):
             hass.services.async_remove(DOMAIN, service)

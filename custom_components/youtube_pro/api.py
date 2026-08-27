@@ -155,13 +155,23 @@ class YouTubeProApi:
         )
 
     async def async_enqueue(
-        self, url: str, title: str, *, media_kind: str = "audio"
+        self,
+        url: str,
+        title: str,
+        *,
+        media_kind: str = "audio",
+        entity_id: str | None = None,
+        position: str = "end",
     ) -> dict[str, Any]:
-        """Append a URL to the add-on queue."""
+        """Add a URL to the active session or shared add-on queue."""
         normalized_kind = self._normalize_media_kind(media_kind)
         payload: dict[str, Any] = {"url": url, "title": title}
         if normalized_kind == "video":
             payload["media_kind"] = normalized_kind
+        if entity_id:
+            payload["entity_id"] = entity_id
+        if position == "next":
+            payload["position"] = position
         return await self._request(
             "POST",
             "/api/integration/enqueue",
@@ -192,12 +202,57 @@ class YouTubeProApi:
         )
 
     async def async_queue(
-        self, *, offset: int = 0, limit: int = 200
+        self,
+        *,
+        offset: int = 0,
+        limit: int = 200,
+        entity_id: str | None = None,
     ) -> dict[str, Any]:
-        """Fetch the shared add-on queue."""
-        query = urlencode({"offset": offset, "limit": limit})
+        """Fetch the shared queue or active device session queue."""
+        params: dict[str, Any] = {"offset": offset, "limit": limit}
+        if entity_id:
+            params["entity_id"] = entity_id
+        query = urlencode(params)
         return await self._request(
             "GET", f"/api/integration/queue?{query}", timeout=15
+        )
+
+    async def async_queue_view(self, entity_id: str | None = None) -> dict[str, Any]:
+        """Fetch the queue view, including the current item when available."""
+        query = urlencode({"entity_id": entity_id}) if entity_id else ""
+        suffix = f"?{query}" if query else ""
+        return await self._request(
+            "GET", f"/api/integration/queue{suffix}", timeout=15
+        )
+
+    async def async_start_radio(
+        self,
+        entity_id: str,
+        url: str,
+        title: str,
+        *,
+        media_kind: str = "audio",
+        limit: int = 24,
+        mode: str = "replace",
+    ) -> dict[str, Any]:
+        """Create a YouTube recommendation radio from a seed track."""
+        normalized_kind = self._normalize_media_kind(media_kind)
+        return await self._request(
+            "POST",
+            "/api/integration/radio",
+            payload={
+                "entity_id": entity_id,
+                "seed": {
+                    "url": url,
+                    "title": title,
+                    "media_kind": normalized_kind,
+                },
+                "media_kind": normalized_kind,
+                "limit": limit,
+                "mode": mode,
+                "start_if_missing": True,
+            },
+            timeout=90,
         )
 
     async def async_history(

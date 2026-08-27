@@ -50,6 +50,7 @@ class FakeApi:
 
     def __init__(self):
         self.calls = []
+        self.queue_requests = []
         self.resolve_targets = []
 
     async def async_library(self):
@@ -73,6 +74,7 @@ class FakeApi:
         return {"tracks": TRACKS, "total": 2, "has_more": False}
 
     async def async_queue(self, **kwargs):
+        self.queue_requests.append(kwargs)
         return {"tracks": TRACKS, "total": 2, "has_more": False}
 
     async def async_history(self, **kwargs):
@@ -126,7 +128,7 @@ class FakeCoordinator:
         self.api = api
         self.last_update_success = True
         self.data = {
-            "version": "5.0.1",
+            "version": "5.1.0",
             "sessions": {
                 "media_player.living_room": {
                     "state": "playing",
@@ -179,6 +181,28 @@ async def test_media_source_browse_and_resolve(tmp_path):
     )
     assert resolved.mime_type == "audio/mp4"
     assert api.calls[-1] == ("resolve", TRACKS[1]["url"], "audio")
+
+
+@pytest.mark.asyncio
+async def test_media_source_queue_uses_target_player(tmp_path):
+    hass = HomeAssistant(str(tmp_path))
+    api = FakeApi()
+    source = YouTubeProMediaSource(hass, FakeCoordinator(hass, api))
+
+    queue = await source.async_browse_media(
+        MediaSourceItem(
+            hass,
+            DOMAIN,
+            "queue",
+            "media_player.living_room",
+        )
+    )
+
+    assert len(queue.children) == 2
+    assert api.queue_requests[-1] == {
+        "limit": 200,
+        "entity_id": "media_player.living_room",
+    }
 
 
 @pytest.mark.asyncio

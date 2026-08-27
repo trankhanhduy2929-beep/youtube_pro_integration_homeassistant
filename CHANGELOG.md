@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.1.0 - 2026-08-27
+
+- Đồng bộ custom integration với Add-on YouTube Pro 5.1.0.
+- Media Browser truyền target player khi duyệt queue để hiển thị đúng danh sách tiếp theo của loa.
+- Mở rộng `enqueue` với `entity_id` và `position: next|end`.
+- Thêm service `start_radio` và API client tạo đài phát audio/video với `replace|append`.
+- Giữ nguyên token riêng, auto-discovery, license boundary và các service cũ.
+
 ## 5.0.1 - 2026-08-26
 
 - Đồng bộ custom integration với Add-on YouTube Pro 5.0.1.

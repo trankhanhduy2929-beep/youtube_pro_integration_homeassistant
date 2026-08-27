@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "youtube_pro"
 INTEGRATION = ROOT / "custom_components" / DOMAIN
-FIXED_TIMESTAMP = (2026, 8, 26, 0, 0, 0)
+FIXED_TIMESTAMP = (2026, 8, 27, 0, 0, 0)
 REPO_FOLDER = "youtube-pro-home-assistant"
 
 

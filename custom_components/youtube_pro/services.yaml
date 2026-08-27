@@ -92,13 +92,19 @@ play_playlist:
 
 enqueue:
   name: Thêm vào hàng chờ
-  description: Thêm URL YouTube vào hàng chờ chung của add-on.
+  description: Thêm URL YouTube vào phiên phát của loa hoặc hàng chờ chung.
   fields:
     config_entry_id:
       name: Config entry
       selector:
         config_entry:
           integration: youtube_pro
+    entity_id:
+      name: Thiết bị phát (tùy chọn)
+      description: Nếu loa đang có phiên phát, bài sẽ vào đúng danh sách tiếp theo.
+      selector:
+        entity:
+          domain: media_player
     url:
       name: URL YouTube
       required: true
@@ -117,6 +123,68 @@ enqueue:
           options:
             - audio
             - video
+    position:
+      name: Vị trí
+      default: end
+      selector:
+        select:
+          options:
+            - label: Phát tiếp theo
+              value: next
+            - label: Thêm cuối hàng chờ
+              value: end
+
+start_radio:
+  name: Tạo đài phát YouTube
+  description: Tạo danh sách đề xuất từ một bài và phát tiếp tự động trên loa.
+  fields:
+    config_entry_id:
+      name: Config entry
+      selector:
+        config_entry:
+          integration: youtube_pro
+    entity_id:
+      name: Thiết bị phát
+      required: true
+      selector:
+        entity:
+          domain: media_player
+    url:
+      name: URL YouTube
+      required: true
+      selector:
+        text:
+          type: url
+    title:
+      name: Tiêu đề bài gốc
+      selector:
+        text:
+    media_kind:
+      name: Loại nội dung
+      default: audio
+      selector:
+        select:
+          options:
+            - audio
+            - video
+    mode:
+      name: Cách thêm
+      default: replace
+      selector:
+        select:
+          options:
+            - label: Thay hàng chờ tiếp theo
+              value: replace
+            - label: Nối vào cuối
+              value: append
+    limit:
+      name: Số đề xuất
+      default: 24
+      selector:
+        number:
+          min: 5
+          max: 30
+          mode: box
 
 set_timer:
   name: Đặt lịch phát

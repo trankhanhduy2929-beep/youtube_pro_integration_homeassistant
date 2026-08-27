@@ -239,7 +239,9 @@ class YouTubeProMediaSource(MediaSource):
             if kind == "playlist" and encoded:
                 return await self._async_playlist(_decode_identifier(encoded))
             if kind == "queue" and not encoded:
-                return await self._async_track_collection("queue", "Hàng chờ")
+                return await self._async_track_collection(
+                    "queue", "Hàng chờ", item.target_media_player
+                )
             if kind == "history" and not encoded:
                 return await self._async_track_collection("history", "Nghe gần đây")
             if kind == "discover" and not encoded:
@@ -341,10 +343,16 @@ class YouTubeProMediaSource(MediaSource):
         )
 
     async def _async_track_collection(
-        self, identifier: str, title: str
+        self,
+        identifier: str,
+        title: str,
+        target_media_player: str | None = None,
     ) -> BrowseMediaSource:
         payload = (
-            await self.api.async_queue(limit=MAX_BROWSE_TRACKS)
+            await self.api.async_queue(
+                limit=MAX_BROWSE_TRACKS,
+                entity_id=target_media_player,
+            )
             if identifier == "queue"
             else await self.api.async_history(limit=MAX_BROWSE_TRACKS)
         )

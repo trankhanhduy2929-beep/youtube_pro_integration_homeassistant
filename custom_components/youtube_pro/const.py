@@ -19,6 +19,7 @@ SERVICE_PLAY = "play"
 SERVICE_PLAY_PLAYLIST = "play_playlist"
 SERVICE_ENQUEUE = "enqueue"
 SERVICE_SET_TIMER = "set_timer"
+SERVICE_START_RADIO = "start_radio"
 
 REPEAT_MODES = ("off", "all", "one")
 TIMER_TYPES = ("play", "stop")
