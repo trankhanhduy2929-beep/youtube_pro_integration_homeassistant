@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.2.0 - 2026-08-27
+
+- Đồng bộ Mix cá nhân local-first và hồ sơ nghe với add-on YouTube Pro.
+- Thêm service `play_personal_mix` và `listener_feedback`; Smart Radio nhận `profile_id`.
+- Media Browser thêm mục Mix cá nhân.
+- Loại bỏ nhu cầu Google OAuth/đăng nhập Google; listener data được lưu cục bộ.
+- Giữ nguyên auto-discovery, token riêng, playback, video, queue, Cast/AirPlay/HomePod.
+
 ## 5.1.0 - 2026-08-27
 
 - Đồng bộ custom integration với Add-on YouTube Pro 5.1.0.

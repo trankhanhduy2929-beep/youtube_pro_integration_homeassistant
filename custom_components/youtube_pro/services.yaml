@@ -185,6 +185,11 @@ start_radio:
           min: 5
           max: 30
           mode: box
+    profile_id:
+      name: Hồ sơ nghe
+      description: ID hồ sơ local dùng để cá nhân hóa đài phát.
+      selector:
+        text:
 
 set_timer:
   name: Đặt lịch phát
@@ -265,3 +270,106 @@ set_timer:
           max: 720
           unit_of_measurement: phút
           mode: box
+
+play_personal_mix:
+  name: Phát Mix cá nhân
+  description: Tạo và phát Mix YouTube dựa trên hồ sơ nghe lưu cục bộ của add-on.
+  fields:
+    config_entry_id:
+      name: Config entry
+      selector:
+        config_entry:
+          integration: youtube_pro
+    entity_id:
+      name: Thiết bị phát
+      required: true
+      selector:
+        entity:
+          domain: media_player
+    profile_id:
+      name: Hồ sơ nghe
+      description: Để trống để dùng hồ sơ đang chọn.
+      selector:
+        text:
+    media_kind:
+      name: Loại nội dung
+      default: audio
+      selector:
+        select:
+          options:
+            - audio
+            - video
+    limit:
+      name: Số bài
+      default: 24
+      selector:
+        number:
+          min: 5
+          max: 30
+          mode: box
+    shuffle:
+      name: Phát ngẫu nhiên
+      default: true
+      selector:
+        boolean:
+    refresh:
+      name: Tạo lại đề xuất
+      default: false
+      selector:
+        boolean:
+
+listener_feedback:
+  name: Ghi nhận gu nghe YouTube
+  description: Thích, không thích hoặc ẩn bài/kênh để cải thiện Mix cá nhân.
+  fields:
+    config_entry_id:
+      name: Config entry
+      selector:
+        config_entry:
+          integration: youtube_pro
+    action:
+      name: Hành động
+      required: true
+      selector:
+        select:
+          options:
+            - like
+            - dislike
+            - block_track
+            - block_channel
+            - undo
+    profile_id:
+      name: Hồ sơ nghe
+      selector:
+        text:
+    url:
+      name: URL YouTube
+      selector:
+        text:
+          type: url
+    title:
+      name: Tiêu đề
+      selector:
+        text:
+    channel:
+      name: Kênh
+      selector:
+        text:
+    channel_url:
+      name: URL kênh
+      selector:
+        text:
+          type: url
+    thumbnail:
+      name: Thumbnail
+      selector:
+        text:
+          type: url
+    media_kind:
+      name: Loại nội dung
+      default: audio
+      selector:
+        select:
+          options:
+            - audio
+            - video

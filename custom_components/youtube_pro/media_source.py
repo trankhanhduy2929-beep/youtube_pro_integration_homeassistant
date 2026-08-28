@@ -244,6 +244,8 @@ class YouTubeProMediaSource(MediaSource):
                 )
             if kind == "history" and not encoded:
                 return await self._async_track_collection("history", "Nghe gần đây")
+            if kind == "personal-mix" and not encoded:
+                return await self._async_personal_mix()
             if kind == "discover" and not encoded:
                 return await self._async_search_directory(
                     "discover", "Khám phá", MEDIA_KIND_AUDIO
@@ -289,6 +291,12 @@ class YouTubeProMediaSource(MediaSource):
                 "Video YouTube",
                 media_class=MediaClass.DIRECTORY,
                 media_type=MediaType.VIDEO,
+            ),
+            _source_item(
+                "personal-mix",
+                "Mix cá nhân",
+                media_class=MediaClass.PLAYLIST,
+                media_type=MediaType.PLAYLIST,
             ),
             _source_item(
                 "playlists",
@@ -341,6 +349,13 @@ class YouTubeProMediaSource(MediaSource):
         return self._track_collection(
             f"playlist/{_encode_identifier(name)}", name, payload, playlist_name=name
         )
+
+    async def _async_personal_mix(self) -> BrowseMediaSource:
+        payload = await self.api.async_personal_mix(limit=30, media_kind=MEDIA_KIND_AUDIO)
+        profile = payload.get("profile") if isinstance(payload, dict) else None
+        profile_name = profile.get("name") if isinstance(profile, dict) else None
+        title = f"Mix cá nhân · {profile_name}" if profile_name else "Mix cá nhân"
+        return self._track_collection("personal-mix", title, payload)
 
     async def _async_track_collection(
         self,

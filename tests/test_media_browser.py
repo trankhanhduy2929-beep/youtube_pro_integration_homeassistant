@@ -80,6 +80,15 @@ class FakeApi:
     async def async_history(self, **kwargs):
         return {"tracks": TRACKS[:1], "total": 1, "has_more": False}
 
+    async def async_personal_mix(self, **kwargs):
+        self.calls.append(("personal_mix", kwargs))
+        return {
+            "tracks": TRACKS,
+            "total": 2,
+            "has_more": False,
+            "profile": {"id": "default", "name": "Phòng khách"},
+        }
+
     async def async_search(self, query, **kwargs):
         media_kind = kwargs.get("media_kind", "audio")
         self.calls.append(("search", query, media_kind))
@@ -128,7 +137,7 @@ class FakeCoordinator:
         self.api = api
         self.last_update_success = True
         self.data = {
-            "version": "5.1.0",
+            "version": "5.2.0",
             "sessions": {
                 "media_player.living_room": {
                     "state": "playing",
@@ -167,7 +176,7 @@ async def test_media_source_browse_and_resolve(tmp_path):
     source = YouTubeProMediaSource(hass, FakeCoordinator(hass, api))
 
     root = await source.async_browse_media(MediaSourceItem(hass, DOMAIN, "", None))
-    assert len(root.children) == 6
+    assert len(root.children) == 7
 
     identifier = f"playlist/{_encode_identifier('Yêu thích')}"
     playlist = await source.async_browse_media(
@@ -181,6 +190,21 @@ async def test_media_source_browse_and_resolve(tmp_path):
     )
     assert resolved.mime_type == "audio/mp4"
     assert api.calls[-1] == ("resolve", TRACKS[1]["url"], "audio")
+
+
+@pytest.mark.asyncio
+async def test_media_source_personal_mix(tmp_path):
+    hass = HomeAssistant(str(tmp_path))
+    api = FakeApi()
+    source = YouTubeProMediaSource(hass, FakeCoordinator(hass, api))
+
+    mix = await source.async_browse_media(
+        MediaSourceItem(hass, DOMAIN, "personal-mix", None)
+    )
+
+    assert mix.title == "Mix cá nhân · Phòng khách"
+    assert len(mix.children) == 2
+    assert api.calls[-1][0] == "personal_mix"
 
 
 @pytest.mark.asyncio

@@ -234,25 +234,100 @@ class YouTubeProApi:
         media_kind: str = "audio",
         limit: int = 24,
         mode: str = "replace",
+        profile_id: str | None = None,
     ) -> dict[str, Any]:
         """Create a YouTube recommendation radio from a seed track."""
         normalized_kind = self._normalize_media_kind(media_kind)
+        payload: dict[str, Any] = {
+            "entity_id": entity_id,
+            "seed": {
+                "url": url,
+                "title": title,
+                "media_kind": normalized_kind,
+            },
+            "media_kind": normalized_kind,
+            "limit": limit,
+            "mode": mode,
+            "start_if_missing": True,
+        }
+        if profile_id:
+            payload["profile_id"] = profile_id
         return await self._request(
             "POST",
             "/api/integration/radio",
-            payload={
-                "entity_id": entity_id,
-                "seed": {
-                    "url": url,
-                    "title": title,
-                    "media_kind": normalized_kind,
-                },
-                "media_kind": normalized_kind,
-                "limit": limit,
-                "mode": mode,
-                "start_if_missing": True,
-            },
+            payload=payload,
             timeout=90,
+        )
+
+    async def async_preferences(self) -> dict[str, Any]:
+        """Fetch local listener profiles and feedback summaries."""
+        return await self._request(
+            "GET", "/api/integration/preferences", timeout=15
+        )
+
+    async def async_update_preferences(
+        self,
+        action: str,
+        *,
+        profile_id: str | None = None,
+        name: str | None = None,
+    ) -> dict[str, Any]:
+        """Create, rename, delete or select a listener profile."""
+        payload: dict[str, Any] = {"action": action}
+        if profile_id:
+            payload["profile_id"] = profile_id
+        if name:
+            payload["name"] = name
+        return await self._request(
+            "POST", "/api/integration/preferences", payload=payload, timeout=15
+        )
+
+    async def async_listener_feedback(
+        self,
+        action: str,
+        track: dict[str, Any] | None = None,
+        *,
+        profile_id: str | None = None,
+    ) -> dict[str, Any]:
+        """Record like, dislike or block feedback for a track."""
+        payload: dict[str, Any] = {"action": action}
+        if track:
+            payload["track"] = dict(track)
+        if profile_id:
+            payload["profile_id"] = profile_id
+        return await self._request(
+            "POST",
+            "/api/integration/preferences/feedback",
+            payload=payload,
+            timeout=15,
+        )
+
+    async def async_personal_mix(
+        self,
+        *,
+        profile_id: str | None = None,
+        media_kind: str = "audio",
+        limit: int = 24,
+        refresh: bool = False,
+        entity_id: str | None = None,
+        start: bool = False,
+        shuffle: bool = True,
+    ) -> dict[str, Any]:
+        """Build a local-profile-aware YouTube mix."""
+        normalized_kind = self._normalize_media_kind(media_kind)
+        payload: dict[str, Any] = {
+            "media_kind": normalized_kind,
+            "limit": limit,
+            "refresh": refresh,
+            "start": start,
+            "shuffle": shuffle,
+        }
+        if profile_id:
+            payload["profile_id"] = profile_id
+        if entity_id:
+            payload["entity_id"] = entity_id
+        return await self._request(
+            "POST", "/api/integration/personal-mix", payload=payload, timeout=90
         )
 
     async def async_history(
