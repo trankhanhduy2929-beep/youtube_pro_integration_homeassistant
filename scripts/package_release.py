@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DOMAIN = "youtube_pro"
 INTEGRATION = ROOT / "custom_components" / DOMAIN
 FIXED_TIMESTAMP = (2026, 8, 27, 0, 0, 0)
-REPO_FOLDER = "youtube-pro-home-assistant"
+REPO_FOLDER = "youtube_pro_integration_homeassistant"
 
 
 def manifest_version() -> str:

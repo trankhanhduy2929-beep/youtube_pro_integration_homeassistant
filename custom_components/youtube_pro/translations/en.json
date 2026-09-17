@@ -69,5 +69,11 @@
         }
       }
     }
+  },
+  "issues": {
+    "cannot_connect": {
+      "title": "Cannot reach YouTube Pro",
+      "description": "The YouTube Pro add-on could not be reached: {error}. Check that the add-on is running and the integration token is still valid."
+    }
   }
 }

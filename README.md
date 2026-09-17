@@ -1,6 +1,6 @@
 # YouTube Pro Home Assistant Integration
 
-Custom integration **YouTube Pro 5.2.0** cho Home Assistant. Integration này
+Custom integration **YouTube Pro 5.3.0** cho Home Assistant. Integration này
 kết nối tới add-on YouTube Pro đang chạy trên cổng `2032` và không dùng chung
 config entry, token hoặc dữ liệu với bản YouTube Music Lite.
 
@@ -25,7 +25,7 @@ Sau đó khởi động lại Home Assistant.
 
 ## Cấu hình
 
-1. Khởi động add-on **YouTube Pro 5.2.0** trên cổng `2032`.
+1. Khởi động add-on **YouTube Pro 5.3.0** trên cổng `2032`.
 2. Mở add-on → **Hẹn giờ → Home Assistant integration**.
 3. Sao chép token Integration.
 4. Trong config flow, để URL là `auto` (khuyến nghị). Integration tự dò endpoint qua Supervisor/DNS nội bộ; chỉ nhập URL thủ công khi mạng có cấu hình đặc biệt.
@@ -50,7 +50,10 @@ Nếu cần URL thủ công, dùng `http://homeassistant.local:2032` hoặc IP L
 - Service: `youtube_pro.play`, `youtube_pro.play_playlist`,
   `youtube_pro.enqueue`, `youtube_pro.start_radio`,
   `youtube_pro.play_personal_mix`, `youtube_pro.listener_feedback`,
-  `youtube_pro.set_timer`.
+  `youtube_pro.pause`, `youtube_pro.resume`, `youtube_pro.set_timer`.
+- Diagnostics: tải chẩn đoán config entry (token được che) tại
+  **Settings → Devices & services → YouTube Pro → Download diagnostics**.
+- Repair issue tự hiện khi không kết nối được add-on và tự biến mất khi kết nối lại.
 
 ## Cập nhật token
 
@@ -64,12 +67,12 @@ domain riêng và cổng `2232`, có thể chạy song song.
 
 ## Phát hành
 
-Repository này có workflow kiểm tra tự động. Khi tạo tag dạng `v5.2.0`, GitHub
+Repository này có workflow kiểm tra tự động. Khi tạo tag dạng `v5.3.0`, GitHub
 Actions sẽ tạo các asset:
 
 - `youtube_pro.zip`: asset HACS.
 - `youtube_pro_manual.zip`: gói cài thủ công.
-- `youtube_pro_homeassistant_v5.2.0_source.zip`: source repository.
+- `youtube_pro_homeassistant_v5.3.0_source.zip`: source repository.
 - `SHA256SUMS.txt`: checksum.
 
 Integration không chứa PayOS secret, database secret, Worker service token hoặc

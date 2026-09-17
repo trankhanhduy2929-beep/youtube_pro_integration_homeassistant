@@ -3,11 +3,11 @@
   "name": "YouTube Pro",
   "codeowners": ["@trankhanhduy2929-beep"],
   "config_flow": true,
-  "documentation": "https://github.com/trankhanhduy2929-beep/youtube-pro-home-assistant",
+  "documentation": "https://github.com/trankhanhduy2929-beep/youtube_pro_integration_homeassistant",
   "dependencies": ["media_source"],
   "integration_type": "service",
   "iot_class": "local_polling",
   "single_config_entry": true,
-  "issue_tracker": "https://github.com/trankhanhduy2929-beep/youtube-pro-home-assistant/issues",
-  "version": "5.2.0"
+  "issue_tracker": "https://github.com/trankhanhduy2929-beep/youtube_pro_integration_homeassistant/issues",
+  "version": "5.3.0"
 }

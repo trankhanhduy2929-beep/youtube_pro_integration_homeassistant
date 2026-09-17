@@ -22,9 +22,11 @@ from .const import (
     REPEAT_MODES,
     SERVICE_ENQUEUE,
     SERVICE_LISTENER_FEEDBACK,
+    SERVICE_PAUSE,
     SERVICE_PLAY,
     SERVICE_PLAY_PERSONAL_MIX,
     SERVICE_PLAY_PLAYLIST,
+    SERVICE_RESUME,
     SERVICE_SET_TIMER,
     SERVICE_START_RADIO,
     TIMER_TYPES,
@@ -140,6 +142,13 @@ SET_TIMER_SCHEMA = vol.Schema(
     }
 )
 
+CONTROL_SCHEMA = vol.Schema(
+    {
+        vol.Optional(CONF_CONFIG_ENTRY_ID): cv.string,
+        vol.Required(ATTR_ENTITY_ID): media_player_entity,
+    }
+)
+
 
 def coordinator_for_call(
     hass: HomeAssistant, call: ServiceCall
@@ -177,6 +186,8 @@ async def async_register_services(hass: HomeAssistant) -> None:
             SERVICE_SET_TIMER,
             SERVICE_PLAY_PERSONAL_MIX,
             SERVICE_LISTENER_FEEDBACK,
+            SERVICE_PAUSE,
+            SERVICE_RESUME,
         )
     ):
         return
@@ -298,6 +309,20 @@ async def async_register_services(hass: HomeAssistant) -> None:
             coordinator.api.async_set_timer(payload),
         )
 
+    async def async_pause(call: ServiceCall) -> None:
+        coordinator = coordinator_for_call(hass, call)
+        await refresh_after_service(
+            coordinator,
+            coordinator.api.async_control(call.data[ATTR_ENTITY_ID], "pause"),
+        )
+
+    async def async_resume(call: ServiceCall) -> None:
+        coordinator = coordinator_for_call(hass, call)
+        await refresh_after_service(
+            coordinator,
+            coordinator.api.async_control(call.data[ATTR_ENTITY_ID], "play"),
+        )
+
     hass.services.async_register(
         DOMAIN, SERVICE_PLAY, async_play, schema=PLAY_SCHEMA
     )
@@ -330,6 +355,12 @@ async def async_register_services(hass: HomeAssistant) -> None:
         SERVICE_LISTENER_FEEDBACK,
         async_listener_feedback,
         schema=LISTENER_FEEDBACK_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_PAUSE, async_pause, schema=CONTROL_SCHEMA
+    )
+    hass.services.async_register(
+        DOMAIN, SERVICE_RESUME, async_resume, schema=CONTROL_SCHEMA
     )
 
 
@@ -364,6 +395,8 @@ async def async_unload_entry(
             SERVICE_SET_TIMER,
             SERVICE_PLAY_PERSONAL_MIX,
             SERVICE_LISTENER_FEEDBACK,
+            SERVICE_PAUSE,
+            SERVICE_RESUME,
         ):
             hass.services.async_remove(DOMAIN, service)
     return unloaded

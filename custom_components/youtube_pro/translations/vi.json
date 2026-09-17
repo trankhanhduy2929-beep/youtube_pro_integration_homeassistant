@@ -69,5 +69,11 @@
         }
       }
     }
+  },
+  "issues": {
+    "cannot_connect": {
+      "title": "Không kết nối được YouTube Pro",
+      "description": "Không thể kết nối add-on YouTube Pro: {error}. Kiểm tra add-on đang chạy và token integration còn hợp lệ."
+    }
   }
 }

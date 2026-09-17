@@ -4,6 +4,7 @@ from typing import Any
 import pytest
 
 from custom_components.youtube_pro import (
+    CONTROL_SCHEMA,
     ENQUEUE_SCHEMA,
     LISTENER_FEEDBACK_SCHEMA,
     PLAY_PERSONAL_MIX_SCHEMA,
@@ -156,3 +157,31 @@ async def test_api_sends_targeted_queue_and_radio_payloads():
     feedback = session.calls[4]
     assert feedback["url"].endswith("/api/integration/preferences/feedback")
     assert feedback["json"] == {"action": "undo", "profile_id": "default"}
+
+
+def test_control_schema_accepts_media_player_entity():
+    data = CONTROL_SCHEMA({"entity_id": "media_player.living_room"})
+    assert data["entity_id"] == "media_player.living_room"
+
+
+@pytest.mark.asyncio
+async def test_api_sends_pause_and_resume_control_actions():
+    session = FakeSession(
+        FakeResponse({"success": True}),
+        FakeResponse({"success": True}),
+    )
+    api = YouTubeProApi(session, "http://youtube-pro-addon:2032", "token")
+
+    await api.async_control("media_player.living_room", "pause")
+    await api.async_control("media_player.living_room", "play")
+
+    pause = session.calls[0]
+    assert pause["url"].endswith("/api/integration/control")
+    assert pause["json"] == {
+        "entity_id": "media_player.living_room",
+        "action": "pause",
+    }
+    assert session.calls[1]["json"] == {
+        "entity_id": "media_player.living_room",
+        "action": "play",
+    }

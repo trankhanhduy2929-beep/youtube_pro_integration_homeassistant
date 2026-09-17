@@ -1,5 +1,13 @@
 # Changelog
 
+## 5.3.0 - 2026-09-16
+
+- Thêm `diagnostics.py` (che token) để tải chẩn đoán config entry.
+- Thêm repair issue `cannot_connect` tự tạo khi không kết nối được add-on và tự xóa khi kết nối lại.
+- Thêm service `youtube_pro.pause` và `youtube_pro.resume`.
+- Bổ sung issue translations vi/en.
+- Đồng bộ với Add-on YouTube Pro 5.4.0 (relay tự phục hồi, lyrics, import playlist, thống kê, auto-skip, watchdog, khôi phục âm lượng, sleep fade, video_max_height).
+
 ## 5.2.0 - 2026-08-27
 
 - Đồng bộ Mix cá nhân local-first và hồ sơ nghe với add-on YouTube Pro.

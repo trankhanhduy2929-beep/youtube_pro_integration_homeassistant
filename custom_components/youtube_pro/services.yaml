@@ -373,3 +373,35 @@ listener_feedback:
           options:
             - audio
             - video
+
+pause:
+  name: Tạm dừng phiên phát
+  description: Tạm dừng phiên phát YouTube Pro đang chạy trên media_player.
+  fields:
+    config_entry_id:
+      name: Config entry
+      selector:
+        config_entry:
+          integration: youtube_pro
+    entity_id:
+      name: Thiết bị phát
+      required: true
+      selector:
+        entity:
+          domain: media_player
+
+resume:
+  name: Phát tiếp phiên phát
+  description: Phát tiếp phiên phát YouTube Pro đang tạm dừng trên media_player.
+  fields:
+    config_entry_id:
+      name: Config entry
+      selector:
+        config_entry:
+          integration: youtube_pro
+    entity_id:
+      name: Thiết bị phát
+      required: true
+      selector:
+        entity:
+          domain: media_player
