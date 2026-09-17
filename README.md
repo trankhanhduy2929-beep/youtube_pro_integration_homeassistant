@@ -14,8 +14,8 @@ config entry, token hoặc dữ liệu với bản YouTube Music Lite.
 
 ## Cài thủ công
 
-Giải nén file `youtube_pro_manual.zip` từ GitHub Release vào thư mục cấu hình
-Home Assistant. Kết quả phải là:
+Sao chép thư mục `custom_components/youtube_pro` từ repository này vào thư mục
+cấu hình Home Assistant. Kết quả phải là:
 
 ```text
 /config/custom_components/youtube_pro/manifest.json
@@ -65,15 +65,8 @@ token. Token cũ sẽ không được dùng tiếp.
 YouTube Pro dùng integration domain `youtube_pro` và cổng `2032`. Bản Lite giữ
 domain riêng và cổng `2232`, có thể chạy song song.
 
-## Phát hành
+## Riêng tư và an toàn
 
-Repository này có workflow kiểm tra tự động. Khi tạo tag dạng `v5.3.0`, GitHub
-Actions sẽ tạo các asset:
+Integration này chỉ chứa mã cài đặt cần thiết. Nó không chứa PayOS secret,
+database secret, Worker service token, license key hoặc mật khẩu Admin.
 
-- `youtube_pro.zip`: asset HACS.
-- `youtube_pro_manual.zip`: gói cài thủ công.
-- `youtube_pro_homeassistant_v5.3.0_source.zip`: source repository.
-- `SHA256SUMS.txt`: checksum.
-
-Integration không chứa PayOS secret, database secret, Worker service token hoặc
-mật khẩu Admin.

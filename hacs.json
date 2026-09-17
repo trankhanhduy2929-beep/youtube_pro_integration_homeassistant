@@ -1,7 +1,5 @@
 {
   "name": "YouTube Pro",
   "render_readme": true,
-  "homeassistant": "2026.2.0",
-  "zip_release": true,
-  "filename": "youtube_pro.zip"
+  "homeassistant": "2026.2.0"
 }
