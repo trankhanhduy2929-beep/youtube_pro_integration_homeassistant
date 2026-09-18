@@ -21,10 +21,8 @@ from .const import (
     DOMAIN,
     REPEAT_MODES,
     SERVICE_ENQUEUE,
-    SERVICE_LISTENER_FEEDBACK,
     SERVICE_PAUSE,
     SERVICE_PLAY,
-    SERVICE_PLAY_PERSONAL_MIX,
     SERVICE_PLAY_PLAYLIST,
     SERVICE_RESUME,
     SERVICE_SET_TIMER,
@@ -86,40 +84,9 @@ START_RADIO_SCHEMA = vol.Schema(
         vol.Optional("title", default="YouTube"): cv.string,
         vol.Optional("media_kind", default="audio"): vol.In(("audio", "video")),
         vol.Optional("mode", default="replace"): vol.In(("replace", "append")),
-        vol.Optional("profile_id"): cv.string,
         vol.Optional("limit", default=24): vol.All(
             vol.Coerce(int), vol.Range(min=5, max=30)
         ),
-    }
-)
-
-PLAY_PERSONAL_MIX_SCHEMA = vol.Schema(
-    {
-        vol.Optional(CONF_CONFIG_ENTRY_ID): cv.string,
-        vol.Required(ATTR_ENTITY_ID): media_player_entity,
-        vol.Optional("profile_id"): cv.string,
-        vol.Optional("media_kind", default="audio"): vol.In(("audio", "video")),
-        vol.Optional("limit", default=24): vol.All(
-            vol.Coerce(int), vol.Range(min=5, max=30)
-        ),
-        vol.Optional("shuffle", default=True): cv.boolean,
-        vol.Optional("refresh", default=False): cv.boolean,
-    }
-)
-
-LISTENER_FEEDBACK_SCHEMA = vol.Schema(
-    {
-        vol.Optional(CONF_CONFIG_ENTRY_ID): cv.string,
-        vol.Required("action"): vol.In(
-            ("like", "dislike", "block_track", "block_channel", "undo")
-        ),
-        vol.Optional("profile_id"): cv.string,
-        vol.Optional("url"): cv.url,
-        vol.Optional("title", default="YouTube"): cv.string,
-        vol.Optional("channel"): cv.string,
-        vol.Optional("channel_url"): cv.url,
-        vol.Optional("thumbnail"): cv.url,
-        vol.Optional("media_kind", default="audio"): vol.In(("audio", "video")),
     }
 )
 
@@ -184,8 +151,6 @@ async def async_register_services(hass: HomeAssistant) -> None:
             SERVICE_ENQUEUE,
             SERVICE_START_RADIO,
             SERVICE_SET_TIMER,
-            SERVICE_PLAY_PERSONAL_MIX,
-            SERVICE_LISTENER_FEEDBACK,
             SERVICE_PAUSE,
             SERVICE_RESUME,
         )
@@ -243,47 +208,6 @@ async def async_register_services(hass: HomeAssistant) -> None:
                 media_kind=call.data["media_kind"],
                 limit=call.data["limit"],
                 mode=call.data["mode"],
-                profile_id=call.data.get("profile_id"),
-            ),
-        )
-
-    async def async_play_personal_mix(call: ServiceCall) -> None:
-        coordinator = coordinator_for_call(hass, call)
-        await refresh_after_service(
-            coordinator,
-            coordinator.api.async_personal_mix(
-                profile_id=call.data.get("profile_id"),
-                media_kind=call.data["media_kind"],
-                limit=call.data["limit"],
-                refresh=call.data["refresh"],
-                entity_id=call.data[ATTR_ENTITY_ID],
-                start=True,
-                shuffle=call.data["shuffle"],
-            ),
-        )
-
-    async def async_listener_feedback(call: ServiceCall) -> None:
-        coordinator = coordinator_for_call(hass, call)
-        track = None
-        if call.data["action"] != "undo":
-            track = {
-                field: call.data[field]
-                for field in (
-                    "url",
-                    "title",
-                    "channel",
-                    "channel_url",
-                    "thumbnail",
-                    "media_kind",
-                )
-                if field in call.data
-            }
-        await refresh_after_service(
-            coordinator,
-            coordinator.api.async_listener_feedback(
-                call.data["action"],
-                track or None,
-                profile_id=call.data.get("profile_id"),
             ),
         )
 
@@ -345,18 +269,6 @@ async def async_register_services(hass: HomeAssistant) -> None:
         DOMAIN, SERVICE_SET_TIMER, async_set_timer, schema=SET_TIMER_SCHEMA
     )
     hass.services.async_register(
-        DOMAIN,
-        SERVICE_PLAY_PERSONAL_MIX,
-        async_play_personal_mix,
-        schema=PLAY_PERSONAL_MIX_SCHEMA,
-    )
-    hass.services.async_register(
-        DOMAIN,
-        SERVICE_LISTENER_FEEDBACK,
-        async_listener_feedback,
-        schema=LISTENER_FEEDBACK_SCHEMA,
-    )
-    hass.services.async_register(
         DOMAIN, SERVICE_PAUSE, async_pause, schema=CONTROL_SCHEMA
     )
     hass.services.async_register(
@@ -393,8 +305,6 @@ async def async_unload_entry(
             SERVICE_ENQUEUE,
             SERVICE_START_RADIO,
             SERVICE_SET_TIMER,
-            SERVICE_PLAY_PERSONAL_MIX,
-            SERVICE_LISTENER_FEEDBACK,
             SERVICE_PAUSE,
             SERVICE_RESUME,
         ):

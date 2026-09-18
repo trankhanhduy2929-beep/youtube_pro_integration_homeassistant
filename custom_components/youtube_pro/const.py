@@ -20,8 +20,6 @@ SERVICE_PLAY_PLAYLIST = "play_playlist"
 SERVICE_ENQUEUE = "enqueue"
 SERVICE_SET_TIMER = "set_timer"
 SERVICE_START_RADIO = "start_radio"
-SERVICE_PLAY_PERSONAL_MIX = "play_personal_mix"
-SERVICE_LISTENER_FEEDBACK = "listener_feedback"
 SERVICE_PAUSE = "pause"
 SERVICE_RESUME = "resume"
 

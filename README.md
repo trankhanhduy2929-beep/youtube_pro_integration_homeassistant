@@ -40,16 +40,14 @@ Nếu cần URL thủ công, dùng `http://homeassistant.local:2032` hoặc IP L
 - Queue theo loa: xem và thao tác đúng danh sách tiếp theo của `media_player` đang chọn.
 - Khu vực **Video YouTube** riêng với thumbnail, media class video và resolve relay.
 - Tìm kiếm YouTube native theo ngữ cảnh nhạc hoặc video.
-- Smart Radio từ bài đang phát, tự bổ sung đề xuất khi danh sách gần hết.
-- Mix cá nhân local-first với nhiều hồ sơ nghe và phản hồi thích/không thích/ẩn bài.
-- Media Browser có mục **Mix cá nhân**; dữ liệu hồ sơ chỉ lưu trên installation add-on.
+- Smart Radio từ bài đang phát (theo bài gốc + lịch sử), tự bổ sung đề xuất khi danh sách gần hết.
+- Danh sách bài hát, playlist, hàng chờ và lịch sử trong Media Browser; không còn hồ sơ gu nghe.
 - Không cần đăng nhập Google, Google OAuth hoặc đồng bộ tài khoản YouTube.
 - Phát nhạc/video hoặc playlist tới bất kỳ `media_player` nào; HomePod/AirPlay được add-on xử lý audio fallback.
 - Next, previous, repeat, shuffle và resolve relay an toàn.
 - Sensor: health, extractor, resolve time, active sessions và transport.
 - Service: `youtube_pro.play`, `youtube_pro.play_playlist`,
   `youtube_pro.enqueue`, `youtube_pro.start_radio`,
-  `youtube_pro.play_personal_mix`, `youtube_pro.listener_feedback`,
   `youtube_pro.pause`, `youtube_pro.resume`, `youtube_pro.set_timer`.
 - Diagnostics: tải chẩn đoán config entry (token được che) tại
   **Settings → Devices & services → YouTube Pro → Download diagnostics**.

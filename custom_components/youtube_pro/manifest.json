@@ -9,5 +9,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/trankhanhduy2929-beep/youtube_pro_integration_homeassistant/issues",
   "single_config_entry": true,
-  "version": "5.3.0"
+  "version": "5.4.0"
 }
