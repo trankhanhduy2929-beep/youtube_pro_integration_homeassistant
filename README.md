@@ -34,6 +34,12 @@ Nếu cần URL thủ công, dùng `http://homeassistant.local:2032` hoặc IP L
 
 5. Dán token và chọn loa mặc định cho Media Browser.
 
+### Nếu HACS báo `custom_components/None/manifest.json`
+
+Xóa repository YouTube Pro khỏi **HACS → Custom repositories**, khởi động lại Home Assistant, rồi thêm lại đúng URL repository này với loại **Integration**. Không thêm URL release ZIP và không thêm thư mục con. HACS phải truy cập được cả `api.github.com` và `raw.githubusercontent.com`; lỗi `None` thường là cache cây repository cũ hoặc kết nối GitHub API bị timeout.
+
+Nếu cần cài ngay, tải asset `youtube_pro-manual-v5.4.0.zip` trong release `v5.4.0`, giải nén thư mục `custom_components/youtube_pro` vào `/config/custom_components/youtube_pro`, rồi khởi động lại Home Assistant.
+
 ## Tính năng
 
 - Media Browser native: khám phá, playlist, queue, history và tìm kiếm gần đây.
