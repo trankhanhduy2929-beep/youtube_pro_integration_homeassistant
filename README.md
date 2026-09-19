@@ -1,6 +1,6 @@
 # YouTube Pro Home Assistant Integration
 
-Custom integration **YouTube Pro 5.3.0** cho Home Assistant. Integration này
+Custom integration **YouTube Pro 5.4.0** cho Home Assistant. Integration này
 kết nối tới add-on YouTube Pro đang chạy trên cổng `2032` và không dùng chung
 config entry, token hoặc dữ liệu với bản YouTube Music Lite.
 
@@ -25,7 +25,7 @@ Sau đó khởi động lại Home Assistant.
 
 ## Cấu hình
 
-1. Khởi động add-on **YouTube Pro 5.3.0** trên cổng `2032`.
+1. Khởi động add-on **YouTube Pro 5.13.0** trên cổng `2032`.
 2. Mở add-on → **Hẹn giờ → Home Assistant integration**.
 3. Sao chép token Integration.
 4. Trong config flow, để URL là `auto` (khuyến nghị). Integration tự dò endpoint qua Supervisor/DNS nội bộ; chỉ nhập URL thủ công khi mạng có cấu hình đặc biệt.
